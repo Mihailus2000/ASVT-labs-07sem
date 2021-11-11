@@ -1,9 +1,9 @@
-[submodule "Lab02"]
-	path = Lab02
-	url = git@github.com:Mihailus2000/ASVT_sem7_Lab02.git
 [submodule "Lab03"]
 	path = Lab03
 	url = git@github.com:Mihailus2000/ASVT_sem07_Lab03.git
 [submodule "Lab04"]
 	path = Lab04
 	url = git@github.com:Mihailus2000/ASVT_sem07_Lab04.git
+[submodule "Lab02"]
+	path = Lab02
+	url = git@github.com:Mihailus2000/ASVT_sem7_Lab02.git
