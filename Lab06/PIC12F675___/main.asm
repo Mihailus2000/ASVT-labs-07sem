@@ -11,45 +11,54 @@
 ;====================================================================
 
 #include p12f675.inc                ; Include register definition file
-__CONFIG b'11111111010100'
+__CONFIG b'11111111110100'
 
 ;====================================================================
 ; CONSTANTS
 ;====================================================================
 
-GPIO_DATA equ b'00101000' 
+GPIO_DATA equ b'0000000' 
 INTERRUPT_INIT equ b'11001000'
 PIE1_INIT equ b'00000000'
 TMR1H_INIT equ 0x0
 TMR1L_INIT equ 0x0
 TMR0_INIT equ 0x0
-WPU_INIT equ b'010111'
-IOC_INIT equ b'101000'
+WPU_INIT equ b'110100'			; GPIO1 И GPIO5 - мбб как READ так и WRITE режим. Для кнопки (изначально!) и TX; Для RX и Data соответственно.
+IOC_INIT equ b'000011'
 T1CON_INIT equ b'00000000'
 ;====================================================================
 ; VARIABLES
 ;====================================================================
 
-sound_flags equ 20h
-snd1_flag equ 00h
-snd2_flag equ 01h
-snd3_flag equ 02h
+UART_CON equ 20h
+	BUSY_F equ 00h
+	TR_F equ 01h
+	RD_F equ 02h
+	T0_MODE equ 03h
+	DATA_INC_F equ 04h
+	BIT9 equ 05h
+	SEG7_Display_F equ 06h
+	SaveDataOrAddr equ 07h  	; || 0 - Addr | 1 - Data ||
 
+UART_t0 equ 21h
+	WAIT_HalfBaud equ 00h
+	WAIT_FullBaud equ 01h
 ;LEDS_STATES equ 21h
 ;LED1 equ 00h
 ;LED2 equ 01h
 ;LED3 equ 02h
 
-sound equ GP0
 
-btn1 equ GP3
-btn2 equ GP5
 
-pc_states equ 21h
-in_work_flag equ 00h
-btn_wait_flag equ 01h
-btn2_st equ 02h
-btn3_st equ 03h
+btn_SEND equ GPIO0
+btn_RST equ GPIO3
+btn_INC equ GPIO1
+
+;pc_states equ 21h
+;in_work_flag equ 00h
+;btn_wait_flag equ 01h
+;btn2_st equ 02h
+;btn3_st equ 03h
 
 T1H_REG equ 22h
 T1L_REG equ 23h
@@ -63,6 +72,32 @@ Accum equ 26h
 Lcd_data equ 27h
 
 Loop_ident equ 28h
+
+SERBUF equ 29h		; TODO
+TEMP equ 2Ah
+
+TX equ GPIO1
+RX equ GPIO5
+
+
+
+LastPressedBtns equ 2Bh		;  || 0 bit - SB_SEND | 1 bit - SB_INC/TX | 2 bit - RX/DATA_7_SEG ||
+SB_SEND_Ch equ 00h
+SB_INC_Ch equ 01h
+;--
+
+ADDR_reg equ 2Ch
+DATA_reg equ 2Dh
+
+ButtonModes equ 2Eh
+	SB0_M0	equ 00h
+	SB0_M1	equ 01h
+
+
+SEV_SEGM_reg equ 2Fh
+
+
+
 
 ;====================================================================
 ; RESET and INTERRUPT VECTORS
@@ -91,18 +126,22 @@ Init
     movlw 0x7
     movwf CMCON
 
+	  banksel GPIO
+    ;movlw b'10' ; Default GPIO data
+	movlw GPIO_DATA
+    movwf GPIO
+	
+	 banksel TRISIO
+    movlw b'00001011'   ; GPIO Port options
+    movwf TRISIO
+	
     banksel OPTION_REG
     movlw b'01001000'       ; Options
     movwf OPTION_REG
 
-    banksel TRISIO
-    movlw b'00101000'   ; GPIO Port options
-    movwf TRISIO
+   
 
-    banksel GPIO
-    movlw b'10' ; Default GPIO data
-    movwf GPIO_DATA
-    movwf GPIO
+ 
 
     banksel WPU
     movlw WPU_INIT  ; Pull ups
@@ -130,10 +169,16 @@ Init
     movlw IOC_INIT
     movwf IOC
 
-	CALL SavePortStates
+	;CALL SavePortStates
 	
     return
-	
+
+START
+	CALL Init
+	MainLoop
+		GOTO MainLoop
+		
+		
 	
 IINT_HNDL
 	btfsc INTCON,  GPIF
@@ -145,888 +190,363 @@ IINT_HNDL
 	GOTO T1_INT
 	return
 	
-	
-	
-SavePortStates
-	banksel  GPIO
-	movf GPIO, w
-	movwf LastPortState
-	return
-	
-CheckOnDownChanges
-	banksel  GPIO
-	; Проверка SB2
-	btfss LastPortState, GPIO3
-	GOTO CompareSB3
-	CompareSB2_1
-		btfsc GPIO, GPIO3
-			GOTO CompareSB3
-				iorlw 0FFh
-				return		; Произошло нажатие SB2
-	
-	CompareSB3
-		btfsc LastPortState, GPIO5
-		GOTO CompareSB3_1
-		clrw
-		return
-		CompareSB3_1
-			btfsc GPIO, GPIO5
-				GOTO Nothing
-					iorlw 0FFh
-					return		; Произошло нажатие SB2
-	Nothing
-		; Произошли только отжатия
-		clrw
-		return
-		
-Reset2SecTimer	
-	CALL Start2SecTmr
-	CALL SavePortStates
-	bcf INTCON, GPIF
-	retfie
-		
-	
-GPIO_INT 
-	CALL CheckOnDownChanges
-	;movf W, w
-	;banksel STATUS
-	btfss STATUS, Z
-	GOTO IfUp	
-		CALL SavePortStates
-		bcf INTCON, GPIF		
-		retfie
-	; Только отжатия	
-	IfUp
-		SB2_check
-			banksel GPIO
-			btfsc GPIO, GPIO3
-			GOTO SB3_check
-			; Обработка нажатия клавиши SB2  + проверка нажатия сразу второй
-			btfsc GPIO, GPIO5
-			GOTO ONLY_SB2
-			; Если нажаты две кнопки
-				btfsc sound_flags, snd3_flag
-					GOTO Reset2SecTimer; Если текущий режим подошёл
-					
-					; Если не режим текущий или не запущен просто	
-					bcf INTCON, T0IE
-					movlw 1h
-					andwf pc_states, f
-					clrf sound_flags
-					CALL Start_Mode3
-					bcf INTCON, GPIF
-					CALL SavePortStates
-					retfie
-				
-			ONLY_SB2
-				; Запуск таймера на 1 мс в ожидании нажатия второй кнопки, после этого происходит обработка кнопок (ЕСЛИ НЕ ЗАПУЩЕН УЖЕ!!!!!!!!!!)
-				bcf INTCON, T0IF
-				btfsc sound_flags, snd1_flag
-					GOTO Reset2SecTimer; Если текущий режим подошёл
-					
-					; Если не режим текущий или не запущен просто
-					btfsc pc_states, btn_wait_flag	; Проверка, что таймер уже запущен
-					GOTO ONLY_set_bitSB2
-					; Если не запущен таймер
-					movlw b'01000010' 
-					banksel OPTION_REG
-					movwf OPTION_REG
-					movlw 0BBh
-					banksel TMR0
-					movwf TMR0					; Тут стартовал таймер на 1 мс
-					bsf INTCON, T0IE			; Тут разрешили преоывания
-					bsf pc_states, btn_wait_flag
-				ONLY_set_bitSB2	
-					bsf pc_states, btn2_st			; Запись, что кнопка 2 нажата 
-					;CALL Start_Mode1
-					bcf INTCON, GPIF			
-					CALL SavePortStates
-					retfie
-
-			
-		SB3_check	
-			banksel GPIO
-			btfss GPIO, GPIO5
-			GOTO SB3_Pressed ; Если нажата все-таки клавиша 3
-			bcf INTCON, GPIF
-			CALL SavePortStates
-			; Ни одна кнопка не была нажата, следовательно, произошло ОТЖАТИЕ
-			retfie
-			SB3_Pressed
-				; Обработка нажатия клавиши SB3 + проверка нажатия сразу первой
-				btfsc GPIO, GPIO3
-				GOTO ONLY_SB3
-					; Если нажаты две кнопки
-					btfsc sound_flags, snd3_flag
-						GOTO Reset2SecTimer; Если текущий режим подошёл
-						
-						; Если не режим текущий или не запущен просто	
-						bcf INTCON, T0IE
-						movlw 1h
-						andwf pc_states, f
-						CALL Start_Mode3
-						bcf INTCON, GPIF
-						CALL SavePortStates
-						retfie
-				
-				ONLY_SB3
-						; Запуск таймера на 1 мс в ожидании нажатия ПЕРВОЙ  кнопки, после этого происходит обработка кнопок (ЕСЛИ НЕ ЗАПУЩЕН УЖЕ!!!!!!!!!!)
-					btfsc sound_flags, snd2_flag
-						GOTO Reset2SecTimer; Если текущий режим подошёл
-						
-						; Если не режим текущий или не запущен просто	
-						bcf INTCON, T0IF
-						btfsc pc_states, btn_wait_flag		; Проверка, что таймер уже запущен
-						GOTO ONLY_set_bitSB3
-						; Если не запущен таймер
-						movlw b'01000010' 
-						banksel OPTION_REG
-						movwf OPTION_REG
-						movlw 0BBh
-						banksel TMR0
-						movwf TMR0					; Тут стартовал таймер на 1 мс
-						bsf INTCON, T0IE			; Тут разрешили преоывания
-						bsf pc_states, btn_wait_flag
-					ONLY_set_bitSB3
-						bsf pc_states, btn3_st			; Запись, что кнопка 2 нажата 
-						;CALL Start_Mode2
-						bcf INTCON, GPIF
-						CALL SavePortStates
-						retfie
-
-	
-Start_Mode3
-	; Запустить таймер для времени в 2 сек (Таймер 0)
-	CALL Start2SecTmr
-	; Запустить таймер 1 для отрабатывания звука с заданной частотой в 3 кГц
-	btfsc sound_flags, snd3_flag
-	return; Если текущий режим подошёл
-	; Если не режим текущий или не запущен просто
-	movlw 0FEh
-	movwf T1H_REG
-	banksel TMR1H
-	movwf TMR1H
-	movlw 0B3h
-	movwf T1L_REG
-	movwf TMR1L
-	banksel PIE1
-	bsf PIE1, TMR1IE
-	bsf INTCON, PEIE
-	
-	movlw b'11110010'
-	movwf Lcd_data
-	CALL Fill_LCD
-	
-	banksel T1CON
-	bsf T1CON, TMR1ON	; Запускаем сам таймер
-	bsf sound_flags, snd3_flag
-	return
-	
-Start2SecTmr
-	movlw b'01000110'
-	banksel OPTION_REG
-	movwf OPTION_REG
-	movlw 7Ch
-	movwf T02SecScaler
-	bsf INTCON, T0IE			; Тут разрешили преоывания
-	bcf INTCON, T0IF
-	return
-	
-T0_INT
-	;bsf INTCON, GIE
-	
-	btfss pc_states, btn_wait_flag
-	GOTO Check_on2sec
-		; Если по истечению 1 мс для кнопок
-		btfss pc_states, btn2_st
-		GOTO Check_btn3
-			; Если нажата 1 кнопка
-			btfss pc_states, btn3_st		; Нажата ли вторая?
-			GOTO Pressed_ONLY_btn2 ; Если нажата только одна
-				; Если нажаты две кнопки
-				movlw 1h
-				andwf pc_states, f
-				clrf sound_flags
-				CALL Start_Mode3
-				retfie
-			Pressed_ONLY_btn2
-				movlw 1h
-				andwf pc_states, f
-				clrf sound_flags
-				CALL Start_Mode1
-				retfie
-		Check_btn3
-			; Если нажата ТОЛЬКО 2 кнопка
-			movlw 1h
-			andwf pc_states, f
-			clrf sound_flags
-			CALL Start_Mode2
-			retfie
-			
-	; Если вышло время в 2 сек	
-	Check_on2sec		
-		decfsz T02SecScaler, f
-		GOTO ScalerNotZero
-		GOTO ScalerISZero
-			
-		ScalerISZero
-			banksel T1CON
-			clrf sound_flags
-			bcf INTCON, T0IE ; Выключаем прерывания Таймера 0
-			;bcf PIE1, TMR0IE ; Выключаем прерывания Таймера 1
-			bcf T1CON, TMR1ON  ; Выключаем Таймер 1
-			retfie
-			
-		ScalerNotZero
-			movlw 83h
-			movwf TMR0
-			bcf INTCON, T0IF
-			bsf INTCON, T0IE
-			retfie
-		
-T1_INT
-	;bsf INTCON, GIE
+FindPortDiff
+	; Допустим, состояние порта записывается в регистр LastPortState
 	banksel GPIO
-	btfss GPIO, sound
-	GOTO SET1_inSound
-		; Если сейчас SOUND = 1
-		bcf GPIO, sound
-		GOTO T1_refull
-	SET1_inSound ; Если сейчас SOUND = 0
-		bsf GPIO, sound
-		
-	T1_refull
-		movf T1H_REG, w
-		movwf TMR1H
-		movf T1L_REG, w
-		movwf TMR1L
-		banksel PIR1
-		bcf PIR1, TMR1IF
-		retfie
+	Port_GP0
+		btfsc GPIO, btn_SEND; Если нажата кнопка - то (0)
+			GOTO Port_GP1 ; Если (1)
+			btfss LastPortState, btn_SEND; Если (0) (Если в LastPortState и был 0 - то забиваем, иначе - нажата кнопка)
+				GOTO Port_GP1; Если остаётся быть нажатой
+				bsf LastPressedBtns, SB_SEND_Ch; Если произошло на самом деле нажатие
+	Port_GP1 ; ТОЛЬКО В РЕЖИМЕ ДО отправки {TODO}
+		btfsc UART_CON, DATA_INC_F
+			GOTO Check_SB_INC; Если 1
+			GOTO Port_GP5; Если 0
+		Check_SB_INC
+			btfsc GPIO, btn_INC ; Если нажата кнопка - то (0)
+				GOTO Port_GP5
+				btfss LastPortState, btn_INC ; Если в LastPortState и был 0 - то забиваем, иначе - нажатая кнопка
+					GOTO Port_GP5 ; Если остаётся 
+					bsf LastPressedBtns, SB_INC_Ch ; Если на самом деле произошло нажатие
+	Port_GP5
+	; Нужна проверка, что RX в режиме чтения (мб и не надо, так как не срабатывает прерывание по GPIO во время "вывода")
+	; По СПАДУ вызывается обработка приходящего сообщения
+		btfsc UART_CON, SEG7_Display_F
+			return; Если происходит вывод - то не может быть никак подключен порт к RX
+			bsf UART_CON, RD_F; Если не вывод - то мб и RX (устанавливаем флаг чтения)
+		return
+	;	btfsc UART_CON, SEG7_Display_F
+	;		return ; Если вывод на 7-сегментник
+	;		; Если Чтение с RX
 
-Fill_LCD
+SB0_SEND_HNDL
+	; 4 нажатия
+	; ИЗНАЧАЛЬНО не горит (если не было присланных данных) и не ждёт данные никакие
+	; 1(00) - активирует считывание адреса (пользователь нажимает на кнопку INC для изменения адреса отправителя)
+	btfsc UART_CON, BUSY_F
+			GOTO SB0_ifBusy; Если по какой-то причине UART занят - или обработка входящего потока, либо уже обработка отправляемого сообщения 
+			GOTO SB0_OK; 
+		SB0_ifBusy
+			banksel STATUS
+		movf ButtonModes, w
+		btfss STATUS, Z
+			retfie 
+			GOTO Fix_addr ; Если Z = 1
+			; ВХОДЯЩЕЕ СООБЩЕНИЕ ОБРЫВАЕТ ВВОД ДАННЫХ	
+	SB0_OK
+		banksel STATUS
+		movf ButtonModes, w
+		btfsc STATUS, Z
+			GOTO Fix_addr ; Если Z = 1
+
+			bsf ButtonModes, SB0_M0  ;  Если Z = 0
+			bsf UART_CON, DATA_INC_F ; Разрешаем чтение данных с SB_INC
+			movlw 0FFh
+			movwf SEV_SEGM_reg
+			retfie ; TODO
+
+	Fix_addr ; 2 (01) - фиксируется данный адрес. Переходит к считыванию данных отправляемых
+		btfsc ButtonModes, SB0_M1
+			GOTO Fix_data_TX
+				
+			movf SEV_SEGM_reg, w
+			movwf ADDR_reg
+			movlw 0FFh
+			movwf SEV_SEGM_reg
+			retfie
+
+	Fix_data_TX  ; 3 (10) - фиксируются отправляемые данные И отправка данных и адреса
+		btfss ButtonModes, SB0_M1
+			retfie
+
+			movf SEV_SEGM_reg, w
+			movwf DATA_reg
+			CALL TRSF_HNDL
+			;clrf SEV_SEGM_reg
+			retfie
+	
+Select_Display_Info
+	banksel STATUS
+	If_0_on7segm
+		movlw 00h
+		xorwf SEV_SEGM_reg, w
+		btfsc STATUS, Z
+			GOTO If_1_on7segm; Не совпало с "0"
+			movlw b'11111100'
+			movwf Lcd_data
+			return
+
+	If_1_on7segm
+		movlw 01h
+		xorwf SEV_SEGM_reg, w
+		btfsc STATUS, Z
+			GOTO If_2_on7segm; Не совпало с "1"
+			movlw b'01100000'
+			movwf Lcd_data
+			return
+
+	If_2_on7segm
+		movlw 02h
+		xorwf SEV_SEGM_reg, w
+		btfsc STATUS, Z
+			GOTO If_3_on7segm; Не совпало с "2"
+			movlw b'11011010'
+			movwf Lcd_data
+			return
+
+	If_3_on7segm
+		movlw 03h
+		xorwf SEV_SEGM_reg, w
+		btfsc STATUS, Z
+			GOTO If_4_on7segm; Не совпало с "3"
+			movlw b'11110010'
+			movwf Lcd_data
+			return
+
+	If_4_on7segm
+		movlw 04h
+		xorwf SEV_SEGM_reg, w
+		btfsc STATUS, Z
+			GOTO If_5_on7segm; Не совпало с "4"
+			movlw b'01100110'
+			movwf Lcd_data
+			return
+
+	If_5_on7segm
+		movlw 05h
+		xorwf SEV_SEGM_reg, w
+		btfsc STATUS, Z
+			GOTO If_6_on7segm; Не совпало с "5"
+			movlw b'10110110'
+			movwf Lcd_data
+			return
+
+	If_6_on7segm
+		movlw 06h
+		xorwf SEV_SEGM_reg, w
+		btfsc STATUS, Z
+			GOTO If_7_on7segm; Не совпало с "6"
+			movlw b'10111110'
+			movwf Lcd_data
+			return
+
+	If_7_on7segm
+		movlw 07h
+		xorwf SEV_SEGM_reg, w
+		btfsc STATUS, Z
+			GOTO If_8_on7segm; Не совпало с "7"
+			movlw b'11100000'
+			movwf Lcd_data
+			return
+			
+	If_8_on7segm
+		movlw 08h
+		xorwf SEV_SEGM_reg, w
+		btfsc STATUS, Z
+			GOTO If_9_on7segm; Не совпало с "8"
+			movlw b'11111110'
+			movwf Lcd_data
+			return
+
+	If_9_on7segm
+		movlw 09h
+		xorwf SEV_SEGM_reg, w
+		btfsc STATUS, Z
+			GOTO If_ERR; Не совпало с "9"
+			movlw b'11110110'
+			movwf Lcd_data
+			return
+	
+	If_ERR
+		movlw b'00000010'
+		movwf Lcd_data
+		return
+
+
+
+Disp_Info_7seg
+	banksel GPIO
 	movlw .9
 	movwf Loop_ident
-	banksel GPIO
-	Loop_bits
+	Loop_Disp_bits
 		decfsz Loop_ident
 			GOTO Fill_LCD_bit
-			GOTO Shift_REG
+			GOTO Shift_reg
 			Fill_LCD_bit
-				btfss Lcd_data, 0h
-					GOTO Set_0
-						movlw b'00000010'
-						iorwf GPIO, f
-						
-						movlw b'11101111'
-						andwf GPIO, f
-						
-						movlw b'00010000'
-						iorwf GPIO, f 
-						
-						movlw b'11101111'
-						andwf GPIO
-						
-						rrf Lcd_data, f
-						GOTO Loop_bits
-					Set_0
-						movlw b'11111101'
-						andwf GPIO, f
-						
-						movlw b'11101111'
-						andwf GPIO, f
-						
-						movlw b'00010000'
-						iorwf GPIO, f 
-						
-						movlw b'11101111'
-						andwf GPIO
-						rrf Lcd_data, f
-						GOTO Loop_bits
-						
-	Shift_REG 
-		movlw b'00000100'
-		iorwf GPIO
-		
-		movlw b'11111011'
-		andwf GPIO
-						
-		return
-
-Start_Mode1
-	; Запустить таймер для времени в 2 сек (Таймер 0)
-	CALL Start2SecTmr
-	; Запустить таймер 1 для отрабатывания звука с заданной частотой в 3 кГц
-	btfsc sound_flags, snd1_flag
-	return; Если текущий режим подошёл
-	; Если не режим текущий или не запущен просто
-	movlw 0FCh
-	movwf T1H_REG
-	banksel TMR1H
-	movwf TMR1H
-	movlw 18h
-	movwf T1L_REG
-	movwf TMR1L
-	banksel PIE1
-	bsf PIE1, TMR1IE
-	bsf INTCON, PEIE
-	
-	movlw b'01100000'
-	movwf Lcd_data
-	CALL Fill_LCD
-	
-	banksel T1CON
-	bsf T1CON, TMR1ON	; Запускаем сам таймер
-	bsf sound_flags, snd1_flag
-	return
-	
-	
-Start_Mode2
-; Запустить таймер для времени в 2 сек (Таймер 0)
-	CALL Start2SecTmr
-	; Запустить таймер 1 для отрабатывания звука с заданной частотой в 3 кГц
-	btfsc sound_flags, snd2_flag
-	return; Если текущий режим подошёл
-	; Если не режим текущий или не запущен просто
-	movlw 0FEh
-	movwf T1H_REG
-	banksel TMR1H
-	movwf TMR1H
-	movlw 0Ch
-	movwf T1L_REG
-	movwf TMR1L
-	banksel PIE1
-	bsf PIE1, TMR1IE
-	bsf INTCON, PEIE
-	
-	movlw b'11011010' ; '11011010' 
-	movwf Lcd_data
-	CALL Fill_LCD
-	
-	banksel T1CON
-	bsf T1CON, TMR1ON	; Запускаем сам таймер
-	bsf sound_flags, snd2_flag
-	return
-
-START
-	CALL Init
-	Start_loop
-	GOTO Start_loop
-;====================================================================
-      END
-;====================================================================
-; Main.asm file generated by New Project wizard
-;
-; Created:   Вс ноя 14 2021
-; Processor: PIC12F675
-; Compiler:  MPASM (Proteus)
-;====================================================================
-
-;====================================================================
-; DEFINITIONS
-;====================================================================
-
-#include p12f675.inc                ; Include register definition file
-__CONFIG b'11111111010100'
-
-;====================================================================
-; CONSTANTS
-;====================================================================
-
-GPIO_DATA equ b'00101000' 
-INTERRUPT_INIT equ b'11001000'
-PIE1_INIT equ b'00000000'
-TMR1H_INIT equ 0x0
-TMR1L_INIT equ 0x0
-TMR0_INIT equ 0x0
-WPU_INIT equ b'010111'
-IOC_INIT equ b'101000'
-T1CON_INIT equ b'00000000'
-;====================================================================
-; VARIABLES
-;====================================================================
-
-sound_flags equ 20h
-snd1_flag equ 00h
-snd2_flag equ 01h
-snd3_flag equ 02h
-
-;LEDS_STATES equ 21h
-;LED1 equ 00h
-;LED2 equ 01h
-;LED3 equ 02h
-
-sound equ GP0
-
-btn1 equ GP3
-btn2 equ GP5
-
-pc_states equ 21h
-in_work_flag equ 00h
-btn_wait_flag equ 01h
-btn2_st equ 02h
-btn3_st equ 03h
-
-T1H_REG equ 22h
-T1L_REG equ 23h
-
-T02SecScaler equ 24h
-
-LastPortState equ 25h
-
-Accum equ 26h
-
-Lcd_data equ 27h
-
-Loop_ident equ 28h
-
-;====================================================================
-; RESET and INTERRUPT VECTORS
-;====================================================================
-
-      ; Reset Vector
-RST   code  0x0 
-      goto  START
-
-INT code 0x4
-	goto IINT_HNDL
-	
-	
-;====================================================================
-; CODE SEGMENT
-;====================================================================
-
-PGM   code
-
-Init
-	
-	banksel ANSEL
-    clrf ANSEL
-
-    banksel CMCON
-    movlw 0x7
-    movwf CMCON
-
-    banksel OPTION_REG
-    movlw b'01001000'       ; Options
-    movwf OPTION_REG
-
-    banksel TRISIO
-    movlw b'00101000'   ; GPIO Port options
-    movwf TRISIO
-
-    banksel GPIO
-    movlw b'10' ; Default GPIO data
-    movwf GPIO_DATA
-    movwf GPIO
-
-    banksel WPU
-    movlw WPU_INIT  ; Pull ups
-    movwf WPU
-
-    banksel INTCON
-    movlw INTERRUPT_INIT   ; Interrupts
-    movwf INTCON
-
-    banksel PIE1
-    movlw PIE1_INIT  ; Enables timer 1 (16-bit) INTERRRUPT (NO)
-    movwf PIE1
-
-    banksel TMR1H
-    movlw TMR1H_INIT
-    movwf TMR1H
-    movlw TMR1L_INIT
-    movwf TMR1L
-
-    banksel T1CON
-    movlw T1CON_INIT    ; Enables timer 1
-    movwf T1CON
-
-    banksel IOC
-    movlw IOC_INIT
-    movwf IOC
-
-	CALL SavePortStates
-	
-    return
-	
-	
-IINT_HNDL
-	btfsc INTCON,  GPIF
-	GOTO GPIO_INT
-	btfsc INTCON, T0IF
-	GOTO T0_INT
-	banksel PIR1
-	btfsc PIR1, TMR1IF
-	GOTO T1_INT
-	return
-	
-	
-	
-SavePortStates
-	banksel  GPIO
-	movf GPIO, w
-	movwf LastPortState
-	return
-	
-CheckOnDownChanges
-	banksel  GPIO
-	; Проверка SB2
-	btfss LastPortState, GPIO3
-	GOTO CompareSB3
-	CompareSB2_1
-		btfsc GPIO, GPIO3
-			GOTO CompareSB3
-				iorlw 0FFh
-				return		; Произошло нажатие SB2
-	
-	CompareSB3
-		btfsc LastPortState, GPIO5
-		GOTO CompareSB3_1
-		clrw
-		return
-		CompareSB3_1
-			btfsc GPIO, GPIO5
-				GOTO Nothing
-					iorlw 0FFh
-					return		; Произошло нажатие SB2
-	Nothing
-		; Произошли только отжатия
-		clrw
-		return
-		
-Reset2SecTimer	
-	CALL Start2SecTmr
-	CALL SavePortStates
-	bcf INTCON, GPIF
-	retfie
-		
-	
-GPIO_INT 
-	CALL CheckOnDownChanges
-	;movf W, w
-	;banksel STATUS
-	btfss STATUS, Z
-	GOTO IfUp	
-		CALL SavePortStates
-		bcf INTCON, GPIF		
-		retfie
-	; Только отжатия	
-	IfUp
-		SB2_check
-			banksel GPIO
-			btfsc GPIO, GPIO3
-			GOTO SB3_check
-			; Обработка нажатия клавиши SB2  + проверка нажатия сразу второй
-			btfsc GPIO, GPIO5
-			GOTO ONLY_SB2
-			; Если нажаты две кнопки
-				btfsc sound_flags, snd3_flag
-					GOTO Reset2SecTimer; Если текущий режим подошёл
+				btfss Lcd_data, 00h
+					GOTO Conf_0bit
+						bcf GPIO, GPIO5
+						GOTO Transfer_bit_to_7seg
 					
-					; Если не режим текущий или не запущен просто	
-					bcf INTCON, T0IE
-					movlw 1h
-					andwf pc_states, f
-					clrf sound_flags
-					CALL Start_Mode3
-					bcf INTCON, GPIF
-					CALL SavePortStates
-					retfie
-				
-			ONLY_SB2
-				; Запуск таймера на 1 мс в ожидании нажатия второй кнопки, после этого происходит обработка кнопок (ЕСЛИ НЕ ЗАПУЩЕН УЖЕ!!!!!!!!!!)
-				bcf INTCON, T0IF
-				btfsc sound_flags, snd1_flag
-					GOTO Reset2SecTimer; Если текущий режим подошёл
-					
-					; Если не режим текущий или не запущен просто
-					btfsc pc_states, btn_wait_flag	; Проверка, что таймер уже запущен
-					GOTO ONLY_set_bitSB2
-					; Если не запущен таймер
-					movlw b'01000010' 
-					banksel OPTION_REG
-					movwf OPTION_REG
-					movlw 0BBh
-					banksel TMR0
-					movwf TMR0					; Тут стартовал таймер на 1 мс
-					bsf INTCON, T0IE			; Тут разрешили преоывания
-					bsf pc_states, btn_wait_flag
-				ONLY_set_bitSB2	
-					bsf pc_states, btn2_st			; Запись, что кнопка 2 нажата 
-					;CALL Start_Mode1
-					bcf INTCON, GPIF			
-					CALL SavePortStates
-					retfie
+					Conf_0bit
+						bsf GPIO, GPIO5
 
+					Transfer_bit_to_7seg
+						bcf GPIO, GPIO4
+						bsf GPIO, GPIO4
+						bcf GPIO, GPIO4
+						rrf Lcd_data, f
+						GOTO Loop_Disp_bits
 			
-		SB3_check	
-			banksel GPIO
-			btfss GPIO, GPIO5
-			GOTO SB3_Pressed ; Если нажата все-таки клавиша 3
-			bcf INTCON, GPIF
-			CALL SavePortStates
-			; Ни одна кнопка не была нажата, следовательно, произошло ОТЖАТИЕ
-			retfie
-			SB3_Pressed
-				; Обработка нажатия клавиши SB3 + проверка нажатия сразу первой
-				btfsc GPIO, GPIO3
-				GOTO ONLY_SB3
-					; Если нажаты две кнопки
-					btfsc sound_flags, snd3_flag
-						GOTO Reset2SecTimer; Если текущий режим подошёл
-						
-						; Если не режим текущий или не запущен просто	
-						bcf INTCON, T0IE
-						movlw 1h
-						andwf pc_states, f
-						CALL Start_Mode3
-						bcf INTCON, GPIF
-						CALL SavePortStates
-						retfie
-				
-				ONLY_SB3
-						; Запуск таймера на 1 мс в ожидании нажатия ПЕРВОЙ  кнопки, после этого происходит обработка кнопок (ЕСЛИ НЕ ЗАПУЩЕН УЖЕ!!!!!!!!!!)
-					btfsc sound_flags, snd2_flag
-						GOTO Reset2SecTimer; Если текущий режим подошёл
-						
-						; Если не режим текущий или не запущен просто	
-						bcf INTCON, T0IF
-						btfsc pc_states, btn_wait_flag		; Проверка, что таймер уже запущен
-						GOTO ONLY_set_bitSB3
-						; Если не запущен таймер
-						movlw b'01000010' 
-						banksel OPTION_REG
-						movwf OPTION_REG
-						movlw 0BBh
-						banksel TMR0
-						movwf TMR0					; Тут стартовал таймер на 1 мс
-						bsf INTCON, T0IE			; Тут разрешили преоывания
-						bsf pc_states, btn_wait_flag
-					ONLY_set_bitSB3
-						bsf pc_states, btn3_st			; Запись, что кнопка 2 нажата 
-						;CALL Start_Mode2
-						bcf INTCON, GPIF
-						CALL SavePortStates
-						retfie
+			Shift_reg
+				bsf GPIO, GPIO2
+				bcf GPIO, GPIO2
+				return
+
+SB1_INC_HNDL
+	btfss UART_CON, BUSY_F
+		retfie ; Если не занят - нах надо что-то инкрементировать? Делать нехрен??
+		
+		incf SEV_SEGM_reg
+		CALL Select_Display_Info
+		CALL Disp_Info_7seg
+		; TODO НАДО менять какие-то ФЛАГИ 100%
+		retfie 
+
+
+
+
+
+
+
+
+
 
 	
-Start_Mode3
-	; Запустить таймер для времени в 2 сек (Таймер 0)
-	CALL Start2SecTmr
-	; Запустить таймер 1 для отрабатывания звука с заданной частотой в 3 кГц
-	btfsc sound_flags, snd3_flag
-	return; Если текущий режим подошёл
-	; Если не режим текущий или не запущен просто
-	movlw 0FEh
-	movwf T1H_REG
-	banksel TMR1H
-	movwf TMR1H
-	movlw 0B3h
-	movwf T1L_REG
-	movwf TMR1L
-	banksel PIE1
-	bsf PIE1, TMR1IE
-	bsf INTCON, PEIE
+GPIO_INT
+	btfss UART_CON, BUSY_F
+		retfie	 ; TODO Мб ЭТО НЕПРАВИЛЬНО
+	; Если UART работает, то проверим дальше что было нажато (по режиму UART)
+	CALL FindPortDiff
+	btfsc UART_CON, RD_F; Если установился флаг RD_F по прерыванию, то значит пришёл start-бит ПОСЫЛКИ - и на всё остальное по барабану.
+		CALL GET_MSG
+	btfsc LastPressedBtns, SB_INC_Ch
+		CALL SB1_INC_HNDL; Если кнопка INC нажата
+	btfsc LastPressedBtns, SB_SEND_Ch 
+		CALL SB0_SEND_HNDL; Если кнопка SEND нажата
+	retfie 	; TODO Проверить достаточно ли этого!
 	
-	movlw b'11110010'
-	movwf Lcd_data
-	CALL Fill_LCD
 	
-	banksel T1CON
-	bsf T1CON, TMR1ON	; Запускаем сам таймер
-	bsf sound_flags, snd3_flag
-	return
-	
-Start2SecTmr
-	movlw b'01000110'
-	banksel OPTION_REG
-	movwf OPTION_REG
-	movlw 7Ch
-	movwf T02SecScaler
-	bsf INTCON, T0IE			; Тут разрешили преоывания
-	bcf INTCON, T0IF
-	return
-	
-T0_INT
-	;bsf INTCON, GIE
-	
-	btfss pc_states, btn_wait_flag
-	GOTO Check_on2sec
-		; Если по истечению 1 мс для кнопок
-		btfss pc_states, btn2_st
-		GOTO Check_btn3
-			; Если нажата 1 кнопка
-			btfss pc_states, btn3_st		; Нажата ли вторая?
-			GOTO Pressed_ONLY_btn2 ; Если нажата только одна
-				; Если нажаты две кнопки
-				movlw 1h
-				andwf pc_states, f
-				clrf sound_flags
-				CALL Start_Mode3
-				retfie
-			Pressed_ONLY_btn2
-				movlw 1h
-				andwf pc_states, f
-				clrf sound_flags
-				CALL Start_Mode1
-				retfie
-		Check_btn3
-			; Если нажата ТОЛЬКО 2 кнопка
-			movlw 1h
-			andwf pc_states, f
-			clrf sound_flags
-			CALL Start_Mode2
-			retfie
-			
-	; Если вышло время в 2 сек	
-	Check_on2sec		
-		decfsz T02SecScaler, f
-		GOTO ScalerNotZero
-		GOTO ScalerISZero
-			
-		ScalerISZero
-			banksel T1CON
-			clrf sound_flags
-			bcf INTCON, T0IE ; Выключаем прерывания Таймера 0
-			;bcf PIE1, TMR0IE ; Выключаем прерывания Таймера 1
-			bcf T1CON, TMR1ON  ; Выключаем Таймер 1
-			retfie
-			
-		ScalerNotZero
-			movlw 83h
-			movwf TMR0
-			bcf INTCON, T0IF
-			bsf INTCON, T0IE
-			retfie
+T0_INT	; Скорость в 9600 бит/с
+	btfss UART_CON, BUSY_F ; Проверка, что UART работает сейчас (а не простаивает)
+		return	; CHECK IT (ТАК КАК МОГУТ БЫТЬ ДРУГИЕ ПРИЧИНЫ РАБОТЫ ТАЙМЕРА 0!!!!!!!!!!!!!!!!!!)
 		
-T1_INT
-	;bsf INTCON, GIE
-	banksel GPIO
-	btfss GPIO, sound
-	GOTO SET1_inSound
-		; Если сейчас SOUND = 1
-		bcf GPIO, sound
-		GOTO T1_refull
-	SET1_inSound ; Если сейчас SOUND = 0
-		bsf GPIO, sound
-		
-	T1_refull
-		movf T1H_REG, w
-		movwf TMR1H
-		movf T1L_REG, w
-		movwf TMR1L
-		banksel PIR1
-		bcf PIR1, TMR1IF
+	;Если T0_mode  == 1, то это целый бит
+	;Если T0_mode  == 0, то это пол бита
+	btfsc UART_CON, T0_MODE
+		GOTO T0_UPD_Baud
+		GOTO T0_UPD_HalfBaud
+	
+	T0_UPD_Baud
+		CALL OneBaud
 		retfie
-
-Fill_LCD
-	movlw .9
-	movwf Loop_ident
-	banksel GPIO
-	Loop_bits
-		decfsz Loop_ident
-			GOTO Fill_LCD_bit
-			GOTO Shift_REG
-			Fill_LCD_bit
-				btfss Lcd_data, 0h
-					GOTO Set_0
-						movlw b'00000010'
-						iorwf GPIO, f
-						
-						movlw b'11101111'
-						andwf GPIO, f
-						
-						movlw b'00010000'
-						iorwf GPIO, f 
-						
-						movlw b'11101111'
-						andwf GPIO
-						
-						rrf Lcd_data, f
-						GOTO Loop_bits
-					Set_0
-						movlw b'11111101'
-						andwf GPIO, f
-						
-						movlw b'11101111'
-						andwf GPIO, f
-						
-						movlw b'00010000'
-						iorwf GPIO, f 
-						
-						movlw b'11101111'
-						andwf GPIO
-						rrf Lcd_data, f
-						GOTO Loop_bits
-						
-	Shift_REG 
-		movlw b'00000100'
-		iorwf GPIO
+	T0_UPD_HalfBaud
+		CALL HalfBaud
+		retfie
 		
-		movlw b'11111011'
-		andwf GPIO
-						
-		return
+		
+		
+T1_INT	
 
-Start_Mode1
-	; Запустить таймер для времени в 2 сек (Таймер 0)
-	CALL Start2SecTmr
-	; Запустить таймер 1 для отрабатывания звука с заданной частотой в 3 кГц
-	btfsc sound_flags, snd1_flag
-	return; Если текущий режим подошёл
-	; Если не режим текущий или не запущен просто
-	movlw 0FCh
-	movwf T1H_REG
-	banksel TMR1H
-	movwf TMR1H
-	movlw 18h
-	movwf T1L_REG
-	movwf TMR1L
-	banksel PIE1
-	bsf PIE1, TMR1IE
-	bsf INTCON, PEIE
-	
-	movlw b'01100000'
-	movwf Lcd_data
-	CALL Fill_LCD
-	
-	banksel T1CON
-	bsf T1CON, TMR1ON	; Запускаем сам таймер
-	bsf sound_flags, snd1_flag
-	return
-	
-	
-Start_Mode2
-; Запустить таймер для времени в 2 сек (Таймер 0)
-	CALL Start2SecTmr
-	; Запустить таймер 1 для отрабатывания звука с заданной частотой в 3 кГц
-	btfsc sound_flags, snd2_flag
-	return; Если текущий режим подошёл
-	; Если не режим текущий или не запущен просто
-	movlw 0FEh
-	movwf T1H_REG
-	banksel TMR1H
-	movwf TMR1H
-	movlw 0Ch
-	movwf T1L_REG
-	movwf TMR1L
-	banksel PIE1
-	bsf PIE1, TMR1IE
-	bsf INTCON, PEIE
-	
-	movlw b'11011010' ; '11011010' 
-	movwf Lcd_data
-	CALL Fill_LCD
-	
-	banksel T1CON
-	bsf T1CON, TMR1ON	; Запускаем сам таймер
-	bsf sound_flags, snd2_flag
-	return
 
-START
-	CALL Init
-	Start_loop
-	GOTO Start_loop
-;====================================================================
-      END
+TRSF_HNDL
+	; Вызывается, если режим отправки сообщений, UART свободен и была нажата кнопка SB0_SEND, для инициализации отправки пакета
+	; Сначала выбирается адрес отправителя. Для этого вызывается функция постоянного обновления 
+	bsf UART_CON, DATA_INC_F 
+	bcf UART_CON, SaveDataOrAddr
+	Wait_7segment_adr
+		btfsc UART_CON, DATA_INC_F 
+		GOTO Wait_7segment_adr
+		; Если адрес/был выбран (нажимается кнопка SB_SEND - таким образом фиксируется адрес)
+	CALL SEND_MSG	; Далее отправляется данный бит в TX
+	; Далее снова режим выбора данных отправляемых
+	; По нажатию SB_SEND фиксируются данные 
+	Wait_7segment_data
+		btfsc UART_CON, DATA_INC_F 
+		GOTO Wait_7segment_data
+	CALL SEND_MSG
+	; Отправка данных в TX
+	; Сброс режимов работы в изначальное состояние. Ждём или нажатия кнопки SB_SEND, или прихода пакета.
+	
+	
+HalfBaud
+	movlw .204
+	banksel TMR0
+	movwf TMR0
+	bsf INTCON, T0IE
+	bsf UART_t0, WAIT_HalfBaud
+	WAIT_forHalfBaud
+		btfsc UART_t0, WAIT_HalfBaud
+			GOTO WAIT_forHalfBaud
+			return
+
+OneBaud
+	movlw .152
+	banksel TMR0
+	movwf TMR0
+	bsf INTCON, T0IE
+	bsf UART_t0, WAIT_FullBaud
+	WAIT_forFullBaud
+		btfsc UART_t0, WAIT_FullBaud
+			GOTO WAIT_forFullBaud
+			return
+	
+GET_MSG
+	movlw .8
+	movwf TEMP
+	clrf SERBUF
+	CALL HalfBaud
+	banksel GPIO
+	Recieve_data
+		CALL OneBaud
+		bcf STATUS, C
+		rrf SERBUF , f
+		btfss GPIO, RX
+		bsf SERBUF, 7
+		decfsz TEMP, f
+		GOTO Recieve_data
+		
+		CALL OneBaud
+		movf SERBUF, w 			; Не знаю зачем
+		retlw 0
+		
+SEND_MSG
+	; TODO Загрузка отправляемой константы  И загрузка 9 битого
+	movlw .8
+	banksel GPIO
+	bsf GPIO, TX
+	Send_data
+		rrf SERBUF, f
+		btfss STATUS, C
+		GOTO Transfer_0
+		GOTO Transfer_1
+		Transfer_0
+			bcf GPIO, TX
+			GOTO BIT_ready
+		Transfer_1
+			bsf GPIO, TX
+		BIT_ready
+			CALL OneBaud
+			decfsz TEMP, f
+			GOTO Send_data
+			
+			btfss UART_CON, BIT9
+			GOTO Send_9one
+			GOTO Send_9zero
+			Send_9one
+				bsf GPIO, TX
+				GOTO Send_Stop
+			Send_9zero
+				bcf GPIO, TX
+			Send_Stop
+				CALL OneBaud
+				rrf  SERBUF, f		; TODO ЗАЧЕМ?????
+				bsf GPIO, TX		; СТОП-БИТ
+				retlw 0
+		
+	
+	
+
+
+END

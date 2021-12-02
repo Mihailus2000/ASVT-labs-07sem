@@ -17,14 +17,14 @@ __CONFIG b'11111111110100'
 ; CONSTANTS
 ;====================================================================
 
-GPIO_DATA equ b'00101000' 
+GPIO_DATA equ b'0000000' 
 INTERRUPT_INIT equ b'11001000'
 PIE1_INIT equ b'00000000'
 TMR1H_INIT equ 0x0
 TMR1L_INIT equ 0x0
 TMR0_INIT equ 0x0
-WPU_INIT equ b'010111'
-IOC_INIT equ b'101000'
+WPU_INIT equ b'110100'			; GPIO1 И GPIO5 - мбб как READ так и WRITE режим. Для кнопки (изначально!) и TX; Для RX и Data соответственно.
+IOC_INIT equ b'000011'
 T1CON_INIT equ b'00000000'
 ;====================================================================
 ; VARIABLES
@@ -126,18 +126,22 @@ Init
     movlw 0x7
     movwf CMCON
 
+	  banksel GPIO
+    ;movlw b'10' ; Default GPIO data
+	movlw GPIO_DATA
+    movwf GPIO
+	
+	 banksel TRISIO
+    movlw b'00001011'   ; GPIO Port options
+    movwf TRISIO
+	
     banksel OPTION_REG
     movlw b'01001000'       ; Options
     movwf OPTION_REG
 
-    banksel TRISIO
-    movlw b'00101000'   ; GPIO Port options
-    movwf TRISIO
+   
 
-    banksel GPIO
-    movlw b'10' ; Default GPIO data
-    movwf GPIO_DATA
-    movwf GPIO
+ 
 
     banksel WPU
     movlw WPU_INIT  ; Pull ups
@@ -166,9 +170,18 @@ Init
     movwf IOC
 
 	;CALL SavePortStates
+	movf GPIO, w
+	movwf LastPortState
+	
 	
     return
-	
+
+START
+	CALL Init
+	MainLoop
+		GOTO MainLoop
+		
+		
 	
 IINT_HNDL
 	btfsc INTCON,  GPIF
@@ -202,9 +215,9 @@ FindPortDiff
 	Port_GP5
 	; Нужна проверка, что RX в режиме чтения (мб и не надо, так как не срабатывает прерывание по GPIO во время "вывода")
 	; По СПАДУ вызывается обработка приходящего сообщения
-		btfsc UART_CON, SEG7_Display_F
-			return; Если происходит вывод - то не может быть никак подключен порт к RX
-			bsf UART_CON, RD_F; Если не вывод - то мб и RX (устанавливаем флаг чтения)
+		;btfsc UART_CON, SEG7_Display_F
+		;	return; Если происходит вывод - то не может быть никак подключен порт к RX
+		;	bsf UART_CON, RD_F; Если не вывод - то мб и RX (устанавливаем флаг чтения)
 		return
 	;	btfsc UART_CON, SEG7_Display_F
 	;		return ; Если вывод на 7-сегментник
@@ -220,21 +233,22 @@ SB0_SEND_HNDL
 		SB0_ifBusy
 			banksel STATUS
 		movf ButtonModes, w
-		btfss STATUS, Z
-			retfie 
+		btfsc STATUS, Z
+			return 
 			GOTO Fix_addr ; Если Z = 1
 			; ВХОДЯЩЕЕ СООБЩЕНИЕ ОБРЫВАЕТ ВВОД ДАННЫХ	
 	SB0_OK
 		banksel STATUS
 		movf ButtonModes, w
-		btfsc STATUS, Z
-			GOTO Fix_addr ; Если Z = 1
+		btfss STATUS, Z
+			GOTO Fix_addr ; Если Z = 0
 
 			bsf ButtonModes, SB0_M0  ;  Если Z = 0
 			bsf UART_CON, DATA_INC_F ; Разрешаем чтение данных с SB_INC
 			movlw 0FFh
 			movwf SEV_SEGM_reg
-			retfie ; TODO
+			bsf UART_CON, BUSY_F
+			return ; TODO
 
 	Fix_addr ; 2 (01) - фиксируется данный адрес. Переходит к считыванию данных отправляемых
 		btfsc ButtonModes, SB0_M1
@@ -244,24 +258,29 @@ SB0_SEND_HNDL
 			movwf ADDR_reg
 			movlw 0FFh
 			movwf SEV_SEGM_reg
-			retfie
+			bcf ButtonModes, SB0_M0  ;  Если Z = 0
+			bsf ButtonModes, SB0_M1  ;  Если Z = 0
+
+			return
 
 	Fix_data_TX  ; 3 (10) - фиксируются отправляемые данные И отправка данных и адреса
 		btfss ButtonModes, SB0_M1
-			retfie
+			return
 
 			movf SEV_SEGM_reg, w
 			movwf DATA_reg
 			CALL TRSF_HNDL
+			clrf UART_CON 					; TODO (ПРАВИЛЬНО ЛИ???)
+			clrf ButtonModes
 			;clrf SEV_SEGM_reg
-			retfie
+			return
 	
 Select_Display_Info
 	banksel STATUS
 	If_0_on7segm
 		movlw 00h
 		xorwf SEV_SEGM_reg, w
-		btfsc
+		btfss STATUS, Z
 			GOTO If_1_on7segm; Не совпало с "0"
 			movlw b'11111100'
 			movwf Lcd_data
@@ -270,7 +289,7 @@ Select_Display_Info
 	If_1_on7segm
 		movlw 01h
 		xorwf SEV_SEGM_reg, w
-		btfsc
+		btfss STATUS, Z
 			GOTO If_2_on7segm; Не совпало с "1"
 			movlw b'01100000'
 			movwf Lcd_data
@@ -279,7 +298,7 @@ Select_Display_Info
 	If_2_on7segm
 		movlw 02h
 		xorwf SEV_SEGM_reg, w
-		btfsc
+		btfss STATUS, Z
 			GOTO If_3_on7segm; Не совпало с "2"
 			movlw b'11011010'
 			movwf Lcd_data
@@ -288,7 +307,7 @@ Select_Display_Info
 	If_3_on7segm
 		movlw 03h
 		xorwf SEV_SEGM_reg, w
-		btfsc
+		btfss STATUS, Z
 			GOTO If_4_on7segm; Не совпало с "3"
 			movlw b'11110010'
 			movwf Lcd_data
@@ -297,7 +316,7 @@ Select_Display_Info
 	If_4_on7segm
 		movlw 04h
 		xorwf SEV_SEGM_reg, w
-		btfsc
+		btfss STATUS, Z
 			GOTO If_5_on7segm; Не совпало с "4"
 			movlw b'01100110'
 			movwf Lcd_data
@@ -306,7 +325,7 @@ Select_Display_Info
 	If_5_on7segm
 		movlw 05h
 		xorwf SEV_SEGM_reg, w
-		btfsc
+		btfss STATUS, Z
 			GOTO If_6_on7segm; Не совпало с "5"
 			movlw b'10110110'
 			movwf Lcd_data
@@ -315,7 +334,7 @@ Select_Display_Info
 	If_6_on7segm
 		movlw 06h
 		xorwf SEV_SEGM_reg, w
-		btfsc
+		btfss STATUS, Z
 			GOTO If_7_on7segm; Не совпало с "6"
 			movlw b'10111110'
 			movwf Lcd_data
@@ -324,7 +343,7 @@ Select_Display_Info
 	If_7_on7segm
 		movlw 07h
 		xorwf SEV_SEGM_reg, w
-		btfsc
+		btfss STATUS, Z
 			GOTO If_8_on7segm; Не совпало с "7"
 			movlw b'11100000'
 			movwf Lcd_data
@@ -333,7 +352,7 @@ Select_Display_Info
 	If_8_on7segm
 		movlw 08h
 		xorwf SEV_SEGM_reg, w
-		btfsc
+		btfss STATUS, Z
 			GOTO If_9_on7segm; Не совпало с "8"
 			movlw b'11111110'
 			movwf Lcd_data
@@ -342,7 +361,7 @@ Select_Display_Info
 	If_9_on7segm
 		movlw 09h
 		xorwf SEV_SEGM_reg, w
-		btfsc
+		btfss STATUS, Z
 			GOTO If_ERR; Не совпало с "9"
 			movlw b'11110110'
 			movwf Lcd_data
@@ -351,6 +370,8 @@ Select_Display_Info
 	If_ERR
 		movlw b'00000010'
 		movwf Lcd_data
+		movlw 0FFh
+		movwf SEV_SEGM_reg
 		return
 
 
@@ -366,11 +387,11 @@ Disp_Info_7seg
 			Fill_LCD_bit
 				btfss Lcd_data, 00h
 					GOTO Conf_0bit
-						bcf GPIO, GPIO5
+						bsf GPIO, GPIO5
 						GOTO Transfer_bit_to_7seg
 					
 					Conf_0bit
-						bsf GPIO, GPIO5
+						bcf GPIO, GPIO5
 
 					Transfer_bit_to_7seg
 						bcf GPIO, GPIO4
@@ -386,13 +407,13 @@ Disp_Info_7seg
 
 SB1_INC_HNDL
 	btfss UART_CON, BUSY_F
-		retfie ; Если не занят - нах надо что-то инкрементировать? Делать нехрен??
+		return ; Если не занят - нах надо что-то инкрементировать? Делать нехрен??
 		
 		incf SEV_SEGM_reg
 		CALL Select_Display_Info
 		CALL Disp_Info_7seg
 		; TODO НАДО менять какие-то ФЛАГИ 100%
-		retfie 
+		return 
 
 
 
@@ -405,9 +426,9 @@ SB1_INC_HNDL
 
 	
 GPIO_INT
-	btfss UART_CON, BUSY_F
-		retfie	 ; TODO Мб ЭТО НЕПРАВИЛЬНО
-	; Если UART работает, то проверим дальше что было нажато (по режиму UART)
+	;btfss UART_CON, BUSY_F
+	;	retfie	 ; TODO Мб ЭТО НЕПРАВИЛЬНО
+;	 Если UART работает, то проверим дальше что было нажато (по режиму UART)
 	CALL FindPortDiff
 	btfsc UART_CON, RD_F; Если установился флаг RD_F по прерыванию, то значит пришёл start-бит ПОСЫЛКИ - и на всё остальное по барабану.
 		CALL GET_MSG
@@ -415,6 +436,12 @@ GPIO_INT
 		CALL SB1_INC_HNDL; Если кнопка INC нажата
 	btfsc LastPressedBtns, SB_SEND_Ch 
 		CALL SB0_SEND_HNDL; Если кнопка SEND нажата
+	clrf LastPressedBtns
+	banksel GPIO
+	movf GPIO, w
+	movwf LastPortState
+	banksel INTCON
+	bcf INTCON, GPIF
 	retfie 	; TODO Проверить достаточно ли этого!
 	
 	
@@ -443,18 +470,16 @@ T1_INT
 TRSF_HNDL
 	; Вызывается, если режим отправки сообщений, UART свободен и была нажата кнопка SB0_SEND, для инициализации отправки пакета
 	; Сначала выбирается адрес отправителя. Для этого вызывается функция постоянного обновления 
-	bsf UART_CON, DATA_INC_F 
-	bcf UART_CON, SaveDataOrAddr
-	Wait_7segment_adr
-		btfsc UART_CON, DATA_INC_F 
-		GOTO Wait_7segment_adr
-		; Если адрес/был выбран (нажимается кнопка SB_SEND - таким образом фиксируется адрес)
+	movf ADDR_reg, w
+	movwf SERBUF
 	CALL SEND_MSG	; Далее отправляется данный бит в TX
 	; Далее снова режим выбора данных отправляемых
 	; По нажатию SB_SEND фиксируются данные 
-	Wait_7segment_data
-		btfsc UART_CON, DATA_INC_F 
-		GOTO Wait_7segment_data
+	
+	; WAIT мб нужен!!!!!!!  TODO
+
+	movf DATA_reg, w
+	movwf SERBUF
 	CALL SEND_MSG
 	; Отправка данных в TX
 	; Сброс режимов работы в изначальное состояние. Ждём или нажатия кнопки SB_SEND, или прихода пакета.
@@ -537,6 +562,6 @@ SEND_MSG
 		
 	
 	
-START
+
 
 END
