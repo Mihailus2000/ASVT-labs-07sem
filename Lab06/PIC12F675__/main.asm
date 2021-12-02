@@ -212,6 +212,7 @@ GPIO_INT
 					bcf INTCON, T0IE
 					movlw 1h
 					andwf pc_states, f
+					clrf sound_flags
 					CALL Start_Mode3
 					bcf INTCON, GPIF
 					CALL SavePortStates
@@ -270,7 +271,7 @@ GPIO_INT
 				
 				ONLY_SB3
 						; Запуск таймера на 1 мс в ожидании нажатия ПЕРВОЙ  кнопки, после этого происходит обработка кнопок (ЕСЛИ НЕ ЗАПУЩЕН УЖЕ!!!!!!!!!!)
-					btfsc sound_flags, snd1_flag
+					btfsc sound_flags, snd2_flag
 						GOTO Reset2SecTimer; Если текущий режим подошёл
 						
 						; Если не режим текущий или не запущен просто	
@@ -345,17 +346,20 @@ T0_INT
 				; Если нажаты две кнопки
 				movlw 1h
 				andwf pc_states, f
+				clrf sound_flags
 				CALL Start_Mode3
 				retfie
 			Pressed_ONLY_btn2
 				movlw 1h
 				andwf pc_states, f
+				clrf sound_flags
 				CALL Start_Mode1
 				retfie
 		Check_btn3
 			; Если нажата ТОЛЬКО 2 кнопка
 			movlw 1h
 			andwf pc_states, f
+			clrf sound_flags
 			CALL Start_Mode2
 			retfie
 			
@@ -401,7 +405,7 @@ T1_INT
 		retfie
 
 Fill_LCD
-	movlw .8
+	movlw .9
 	movwf Loop_ident
 	banksel GPIO
 	Loop_bits
@@ -495,7 +499,7 @@ Start_Mode2
 	bsf PIE1, TMR1IE
 	bsf INTCON, PEIE
 	
-	movlw b'11011010'
+	movlw b'11011010' ; '11011010' 
 	movwf Lcd_data
 	CALL Fill_LCD
 	

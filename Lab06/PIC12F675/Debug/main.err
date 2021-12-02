@@ -1,0 +1,24 @@
+Warning[205] ..\MAIN.ASM 14 : Found directive in column 1. (__CONFIG)
+Error[115]   ..\MAIN.ASM 43 : Duplicate label ("T0_MODE" or redefining symbol that cannot be redefined)
+Message[302] ..\MAIN.ASM 101 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] ..\MAIN.ASM 109 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] ..\MAIN.ASM 113 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] ..\MAIN.ASM 122 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] ..\MAIN.ASM 130 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] ..\MAIN.ASM 144 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Warning[207] ..\MAIN.ASM 171 : Found label after column 1. (Check_otherGPIO_1)
+Warning[207] ..\MAIN.ASM 183 : Found label after column 1. (T0_UPD_Baud)
+Warning[207] ..\MAIN.ASM 186 : Found label after column 1. (T0_UPD_HalfBaud)
+Warning[207] ..\MAIN.ASM 199 : Found label after column 1. (Wait_7segment_adr)
+Warning[207] ..\MAIN.ASM 206 : Found label after column 1. (Wait_7segment_data)
+Warning[207] ..\MAIN.ASM 220 : Found label after column 1. (WAIT_forHalfBaud)
+Warning[207] ..\MAIN.ASM 231 : Found label after column 1. (WAIT_forFullBaud)
+Warning[207] ..\MAIN.ASM 242 : Found label after column 1. (Recieve_data)
+Warning[207] ..\MAIN.ASM 260 : Found label after column 1. (Send_data)
+Warning[207] ..\MAIN.ASM 265 : Found label after column 1. (Transfer_0)
+Warning[207] ..\MAIN.ASM 268 : Found label after column 1. (Transfer_1)
+Warning[207] ..\MAIN.ASM 270 : Found label after column 1. (BIT_ready)
+Warning[207] ..\MAIN.ASM 278 : Found label after column 1. (Send_9one)
+Warning[207] ..\MAIN.ASM 281 : Found label after column 1. (Send_9zero)
+Warning[207] ..\MAIN.ASM 283 : Found label after column 1. (Send_Stop)
+Warning[205] ..\MAIN.ASM 293 : Found directive in column 1. (END)

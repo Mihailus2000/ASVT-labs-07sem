@@ -1,4 +1,4 @@
-MPASM 5.76                          MAIN.ASM   11-25-2021  16:44:42         PAGE  1
+MPASM 5.76                          MAIN.ASM   11-28-2021  14:29:25         PAGE  1
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
@@ -57,7 +57,7 @@ Warning[205]: Found directive in column 1. (__CONFIG)
                       00040 ;LED2 equ 01h
                       00041 ;LED3 equ 02h
                       00042 
-MPASM 5.76                          MAIN.ASM   11-25-2021  16:44:42         PAGE  2
+MPASM 5.76                          MAIN.ASM   11-28-2021  14:29:25         PAGE  2
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
@@ -83,497 +83,552 @@ LOC  OBJECT CODE     LINE SOURCE TEXT
                       00060 
   00000026            00061 Accum equ 26h
                       00062 
-                      00063 ;====================================================================
-                      00064 ; RESET and INTERRUPT VECTORS
-                      00065 ;====================================================================
+  00000027            00063 Lcd_data equ 27h
+                      00064 
+  00000028            00065 Loop_ident equ 28h
                       00066 
-                      00067       ; Reset Vector
-                      00068 RST   code  0x0 
-0000   2???           00069       goto  START
+                      00067 ;====================================================================
+                      00068 ; RESET and INTERRUPT VECTORS
+                      00069 ;====================================================================
                       00070 
-                      00071 INT code 0x4
-0004   2???           00072         goto IINT_HNDL
-                      00073         
-                      00074         
-                      00075 ;====================================================================
-                      00076 ; CODE SEGMENT
-                      00077 ;====================================================================
-                      00078 
-                      00079 PGM   code
-                      00080 
-0000                  00081 Init
-                      00082         
-0000   1683           00083         banksel ANSEL
+                      00071       ; Reset Vector
+                      00072 RST   code  0x0 
+0000   2???           00073       goto  START
+                      00074 
+                      00075 INT code 0x4
+0004   2???           00076         goto IINT_HNDL
+                      00077         
+                      00078         
+                      00079 ;====================================================================
+                      00080 ; CODE SEGMENT
+                      00081 ;====================================================================
+                      00082 
+                      00083 PGM   code
+                      00084 
+0000                  00085 Init
+                      00086         
+0000   1683           00087         banksel ANSEL
 Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
-0001   019F           00084     clrf ANSEL
-                      00085 
-0002   1283           00086     banksel CMCON
-0003   3007           00087     movlw 0x7
-0004   0099           00088     movwf CMCON
+0001   019F           00088     clrf ANSEL
                       00089 
-0005   1683           00090     banksel OPTION_REG
-0006   3048           00091     movlw b'01001000'       ; Options
-Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
-0007   0081           00092     movwf OPTION_REG
+0002   1283           00090     banksel CMCON
+0003   3007           00091     movlw 0x7
+0004   0099           00092     movwf CMCON
                       00093 
-MPASM 5.76                          MAIN.ASM   11-25-2021  16:44:42         PAGE  3
+0005   1683           00094     banksel OPTION_REG
+MPASM 5.76                          MAIN.ASM   11-28-2021  14:29:25         PAGE  3
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
   VALUE
 
-0008   1683           00094     banksel TRISIO
-0009   3028           00095     movlw b'00101000'   ; GPIO Port options
+0006   3048           00095     movlw b'01001000'       ; Options
 Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
-000A   0085           00096     movwf TRISIO
+0007   0081           00096     movwf OPTION_REG
                       00097 
-000B   1283           00098     banksel GPIO
-000C   3002           00099     movlw b'10' ; Default GPIO data
-000D   00A8           00100     movwf GPIO_DATA
-000E   0085           00101     movwf GPIO
-                      00102 
-000F   1683           00103     banksel WPU
-0010   3017           00104     movlw WPU_INIT  ; Pull ups
+0008   1683           00098     banksel TRISIO
+0009   3028           00099     movlw b'00101000'   ; GPIO Port options
 Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
-0011   0095           00105     movwf WPU
+000A   0085           00100     movwf TRISIO
+                      00101 
+000B   1283           00102     banksel GPIO
+000C   3002           00103     movlw b'10' ; Default GPIO data
+000D   00A8           00104     movwf GPIO_DATA
+000E   0085           00105     movwf GPIO
                       00106 
-0012   1283           00107     banksel INTCON
-0013   30C8           00108     movlw INTERRUPT_INIT   ; Interrupts
-0014   008B           00109     movwf INTCON
+000F   1683           00107     banksel WPU
+0010   3017           00108     movlw WPU_INIT  ; Pull ups
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0011   0095           00109     movwf WPU
                       00110 
-0015   1683           00111     banksel PIE1
-0016   3000           00112     movlw PIE1_INIT  ; Enables timer 1 (16-bit) INTERRRUPT (NO)
-Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
-0017   008C           00113     movwf PIE1
+0012   1283           00111     banksel INTCON
+0013   30C8           00112     movlw INTERRUPT_INIT   ; Interrupts
+0014   008B           00113     movwf INTCON
                       00114 
-0018   1283           00115     banksel TMR1H
-0019   3000           00116     movlw TMR1H_INIT
-001A   008F           00117     movwf TMR1H
-001B   3000           00118     movlw TMR1L_INIT
-001C   008E           00119     movwf TMR1L
-                      00120 
-001D   1283           00121     banksel T1CON
-001E   3000           00122     movlw T1CON_INIT    ; Enables timer 1
-001F   0090           00123     movwf T1CON
+0015   1683           00115     banksel PIE1
+0016   3000           00116     movlw PIE1_INIT  ; Enables timer 1 (16-bit) INTERRRUPT (NO)
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0017   008C           00117     movwf PIE1
+                      00118 
+0018   1283           00119     banksel TMR1H
+0019   3000           00120     movlw TMR1H_INIT
+001A   008F           00121     movwf TMR1H
+001B   3000           00122     movlw TMR1L_INIT
+001C   008E           00123     movwf TMR1L
                       00124 
-0020   1683           00125     banksel IOC
-0021   3028           00126     movlw IOC_INIT
-Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
-0022   0096           00127     movwf IOC
+001D   1283           00125     banksel T1CON
+001E   3000           00126     movlw T1CON_INIT    ; Enables timer 1
+001F   0090           00127     movwf T1CON
                       00128 
-0023   2???           00129         CALL SavePortStates
-                      00130         
-0024   0008           00131     return
-                      00132         
-                      00133         
-0025                  00134 IINT_HNDL
-0025   180B           00135         btfsc INTCON,  GPIF
-0026   2???           00136         GOTO GPIO_INT
-0027   190B           00137         btfsc INTCON, T0IF
-0028   2???           00138         GOTO T0_INT
-0029   1283           00139         banksel PIR1
-002A   180C           00140         btfsc PIR1, TMR1IF
-002B   2???           00141         GOTO T1_INT
-002C   0008           00142         return
-MPASM 5.76                          MAIN.ASM   11-25-2021  16:44:42         PAGE  4
+0020   1683           00129     banksel IOC
+0021   3028           00130     movlw IOC_INIT
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0022   0096           00131     movwf IOC
+                      00132 
+0023   2???           00133         CALL SavePortStates
+                      00134         
+0024   0008           00135     return
+                      00136         
+                      00137         
+0025                  00138 IINT_HNDL
+0025   180B           00139         btfsc INTCON,  GPIF
+0026   2???           00140         GOTO GPIO_INT
+0027   190B           00141         btfsc INTCON, T0IF
+0028   2???           00142         GOTO T0_INT
+MPASM 5.76                          MAIN.ASM   11-28-2021  14:29:25         PAGE  4
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
   VALUE
 
-                      00143         
-                      00144         
-                      00145         
-002D                  00146 SavePortStates
-002D   1283           00147         banksel  GPIO
-002E   0805           00148         movf GPIO, w
-002F   00A5           00149         movwf LastPortState
-0030   0008           00150         return
-                      00151         
-0031                  00152 CheckOnDownChanges
-0031   1283           00153         banksel  GPIO
-                      00154         ; Проверка SB2
-0032   1DA5           00155         btfss LastPortState, GPIO3
-0033   2???           00156         GOTO CompareSB3
+0029   1283           00143         banksel PIR1
+002A   180C           00144         btfsc PIR1, TMR1IF
+002B   2???           00145         GOTO T1_INT
+002C   0008           00146         return
+                      00147         
+                      00148         
+                      00149         
+002D                  00150 SavePortStates
+002D   1283           00151         banksel  GPIO
+002E   0805           00152         movf GPIO, w
+002F   00A5           00153         movwf LastPortState
+0030   0008           00154         return
+                      00155         
+0031                  00156 CheckOnDownChanges
+0031   1283           00157         banksel  GPIO
+                      00158         ; Проверка SB2
+0032   1DA5           00159         btfss LastPortState, GPIO3
+0033   2???           00160         GOTO CompareSB3
 Warning[207]: Found label after column 1. (CompareSB2_1)
-0034                  00157         CompareSB2_1
-0034   1985           00158                 btfsc GPIO, GPIO3
-0035   2???           00159                         GOTO CompareSB3
+0034                  00161         CompareSB2_1
+0034   1985           00162                 btfsc GPIO, GPIO3
+0035   2???           00163                         GOTO CompareSB3
 Warning[219]: Invalid RAM location specified.
 Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
-0036   047F           00160                         iorwf 0FFh, w
-0037   0008           00161                         return          ; Произошло нажатие SB2
-                      00162         
+0036   047F           00164                         iorwf 0FFh, w
+0037   0008           00165                         return          ; Произошло нажатие SB2
+                      00166         
 Warning[207]: Found label after column 1. (CompareSB3)
-0038                  00163         CompareSB3
-0038   1AA5           00164                 btfsc LastPortState, GPIO5
-0039   2???           00165                 GOTO CompareSB3_1
-003A   0103           00166                 clrw
-003B   0008           00167                 return
+0038                  00167         CompareSB3
+0038   1AA5           00168                 btfsc LastPortState, GPIO5
+0039   2???           00169                 GOTO CompareSB3_1
+003A   0103           00170                 clrw
+003B   0008           00171                 return
 Warning[207]: Found label after column 1. (CompareSB3_1)
-003C                  00168                 CompareSB3_1
-003C   1A85           00169                         btfsc GPIO, GPIO5
-003D   2???           00170                                 GOTO Nothing
+003C                  00172                 CompareSB3_1
+003C   1A85           00173                         btfsc GPIO, GPIO5
+003D   2???           00174                                 GOTO Nothing
 Warning[219]: Invalid RAM location specified.
 Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
-003E   047F           00171                                 iorwf 0FFh, w
-003F   0008           00172                                 return          ; Произошло нажатие SB2
+003E   047F           00175                                 iorwf 0FFh, w
+003F   0008           00176                                 return          ; Произошло нажатие SB2
 Warning[207]: Found label after column 1. (Nothing)
-0040                  00173         Nothing
-                      00174                 ; Произошли только отжатия
-0040   0103           00175                 clrw
-0041   0008           00176                 return
-                      00177                 
-0042                  00178 Reset2SecTimer  
-0042   2???           00179         CALL Start2SecTmr
-0043   2???           00180         CALL SavePortStates
-0044   100B           00181         bcf INTCON, GPIF
-0045   0009           00182         retfie
-                      00183                 
-                      00184         
-0046                  00185 GPIO_INT 
-0046   2???           00186         CALL CheckOnDownChanges
-                      00187         ;movf W, w
-MPASM 5.76                          MAIN.ASM   11-25-2021  16:44:42         PAGE  5
+0040                  00177         Nothing
+                      00178                 ; Произошли только отжатия
+0040   0103           00179                 clrw
+0041   0008           00180                 return
+                      00181                 
+0042                  00182 Reset2SecTimer  
+0042   2???           00183         CALL Start2SecTmr
+0043   2???           00184         CALL SavePortStates
+0044   100B           00185         bcf INTCON, GPIF
+0045   0009           00186         retfie
+                      00187                 
+MPASM 5.76                          MAIN.ASM   11-28-2021  14:29:25         PAGE  5
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
   VALUE
 
-                      00188         ;banksel STATUS
-0047   1D03           00189         btfss STATUS, Z
-0048   2???           00190         GOTO IfUp       
-0049   2???           00191                 CALL SavePortStates
-004A   100B           00192                 bcf INTCON, GPIF                
-004B   0009           00193                 retfie
-                      00194         ; Только отжатия   
+                      00188         
+0046                  00189 GPIO_INT 
+0046   2???           00190         CALL CheckOnDownChanges
+                      00191         ;movf W, w
+                      00192         ;banksel STATUS
+0047   1D03           00193         btfss STATUS, Z
+0048   2???           00194         GOTO IfUp       
+0049   2???           00195                 CALL SavePortStates
+004A   100B           00196                 bcf INTCON, GPIF                
+004B   0009           00197                 retfie
+                      00198         ; Только отжатия   
 Warning[207]: Found label after column 1. (IfUp)
-004C                  00195         IfUp
+004C                  00199         IfUp
 Warning[207]: Found label after column 1. (SB2_check)
-004C                  00196                 SB2_check
-004C   1283           00197                         banksel GPIO
-004D   1985           00198                         btfsc GPIO, GPIO3
-004E   2???           00199                         GOTO SB3_check
-                      00200                         ; Обработка нажатия клавиши SB2  + проверка на�
+004C                  00200                 SB2_check
+004C   1283           00201                         banksel GPIO
+004D   1985           00202                         btfsc GPIO, GPIO3
+004E   2???           00203                         GOTO SB3_check
+                      00204                         ; Обработка нажатия клавиши SB2  + проверка на�
                             �атия сразу второй
-004F   1A85           00201                         btfsc GPIO, GPIO5
-0050   2???           00202                         GOTO ONLY_SB2
-                      00203                         ; Если нажаты две кнопки
-0051   1920           00204                                 btfsc sound_flags, snd3_flag
-0052   2???           00205                                         GOTO Reset2SecTimer; Если текущий режим подо
+004F   1A85           00205                         btfsc GPIO, GPIO5
+0050   2???           00206                         GOTO ONLY_SB2
+                      00207                         ; Если нажаты две кнопки
+0051   1920           00208                                 btfsc sound_flags, snd3_flag
+0052   2???           00209                                         GOTO Reset2SecTimer; Если текущий режим подо
                             шёл
-                      00206                                         
-                      00207                                         ; Если не режим текущий или не запущ
+                      00210                                         
+                      00211                                         ; Если не режим текущий или не запущ
                             ен просто       
-0053   128B           00208                                         bcf INTCON, T0IE
-0054   3001           00209                                         movlw 1h
-0055   05A1           00210                                         andwf pc_states, f
-0056   2???           00211                                         CALL Start_Mode3
-0057   100B           00212                                         bcf INTCON, GPIF
-0058   2???           00213                                         CALL SavePortStates
-0059   0009           00214                                         retfie
-                      00215                                 
+0053   128B           00212                                         bcf INTCON, T0IE
+0054   3001           00213                                         movlw 1h
+0055   05A1           00214                                         andwf pc_states, f
+0056   2???           00215                                         CALL Start_Mode3
+0057   100B           00216                                         bcf INTCON, GPIF
+0058   2???           00217                                         CALL SavePortStates
+0059   0009           00218                                         retfie
+                      00219                                 
 Warning[207]: Found label after column 1. (ONLY_SB2)
-005A                  00216                         ONLY_SB2
-                      00217                                 ; Запуск таймера на 1 мс в ожидании нажат
+005A                  00220                         ONLY_SB2
+                      00221                                 ; Запуск таймера на 1 мс в ожидании нажат
                             ия второй кнопки, после этого происходит обработка к
-005A   110B           00218                                 bcf INTCON, T0IF
-005B   1820           00219                                 btfsc sound_flags, snd1_flag
-005C   2???           00220                                         GOTO Reset2SecTimer; Если текущий режим подо
+005A   110B           00222                                 bcf INTCON, T0IF
+005B   1820           00223                                 btfsc sound_flags, snd1_flag
+005C   2???           00224                                         GOTO Reset2SecTimer; Если текущий режим подо
                             шёл
-                      00221                                         
-                      00222                                         ; Если не режим текущий или не запущ
+                      00225                                         
+                      00226                                         ; Если не режим текущий или не запущ
                             ен просто
-005D   18A1           00223                                         btfsc pc_states, btn_wait_flag  ; Проверка, что та�
+005D   18A1           00227                                         btfsc pc_states, btn_wait_flag  ; Проверка, что та�
                             �мер уже запущен
-005E   2???           00224                                         GOTO ONLY_set_bitSB2
-                      00225                                         ; Если не запущен таймер
-005F   3042           00226                                         movlw b'01000010' 
-0060   1683           00227                                         banksel OPTION_REG
-Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
-0061   0081           00228                                         movwf OPTION_REG
-0062   30BB           00229                                         movlw 0BBh
-MPASM 5.76                          MAIN.ASM   11-25-2021  16:44:42         PAGE  6
+005E   2???           00228                                         GOTO ONLY_set_bitSB2
+                      00229                                         ; Если не запущен таймер
+005F   3042           00230                                         movlw b'01000010' 
+MPASM 5.76                          MAIN.ASM   11-28-2021  14:29:25         PAGE  6
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
   VALUE
 
-0063   1283           00230                                         banksel TMR0
-0064   0081           00231                                         movwf TMR0                                      ; Тут ста�
+0060   1683           00231                                         banksel OPTION_REG
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0061   0081           00232                                         movwf OPTION_REG
+0062   30BB           00233                                         movlw 0BBh
+0063   1283           00234                                         banksel TMR0
+0064   0081           00235                                         movwf TMR0                                      ; Тут ста�
                             �товал таймер на 1 мс
-0065   168B           00232                                         bsf INTCON, T0IE                        ; Тут разреши�
+0065   168B           00236                                         bsf INTCON, T0IE                        ; Тут разреши�
                             �и преоывания
-0066   14A1           00233                                         bsf pc_states, btn_wait_flag
+0066   14A1           00237                                         bsf pc_states, btn_wait_flag
 Warning[207]: Found label after column 1. (ONLY_set_bitSB2)
-0067                  00234                                 ONLY_set_bitSB2 
-0067   1521           00235                                         bsf pc_states, btn2_st                  ; Запись, что �
+0067                  00238                                 ONLY_set_bitSB2 
+0067   1521           00239                                         bsf pc_states, btn2_st                  ; Запись, что �
                             �нопка 2 нажата 
-                      00236                                         ;CALL Start_Mode1
-0068   100B           00237                                         bcf INTCON, GPIF                        
-0069   2???           00238                                         CALL SavePortStates
-006A   0009           00239                                         retfie
-                      00240 
-                      00241                         
+                      00240                                         ;CALL Start_Mode1
+0068   100B           00241                                         bcf INTCON, GPIF                        
+0069   2???           00242                                         CALL SavePortStates
+006A   0009           00243                                         retfie
+                      00244 
+                      00245                         
 Warning[207]: Found label after column 1. (SB3_check)
-006B                  00242                 SB3_check       
-006B   1283           00243                         banksel GPIO
-006C   1E85           00244                         btfss GPIO, GPIO5
-006D   2???           00245                         GOTO SB3_Pressed ; Если нажата все-таки клавиша 3
-006E   100B           00246                         bcf INTCON, GPIF
-006F   2???           00247                         CALL SavePortStates
-                      00248                         ; Ни одна кнопка не была нажата, следователь�
+006B                  00246                 SB3_check       
+006B   1283           00247                         banksel GPIO
+006C   1E85           00248                         btfss GPIO, GPIO5
+006D   2???           00249                         GOTO SB3_Pressed ; Если нажата все-таки клавиша 3
+006E   100B           00250                         bcf INTCON, GPIF
+006F   2???           00251                         CALL SavePortStates
+                      00252                         ; Ни одна кнопка не была нажата, следователь�
                             �о, произошло ОТЖАТИЕ
-0070   0009           00249                         retfie
+0070   0009           00253                         retfie
 Warning[207]: Found label after column 1. (SB3_Pressed)
-0071                  00250                         SB3_Pressed
-                      00251                                 ; Обработка нажатия клавиши SB3 + проверк�
+0071                  00254                         SB3_Pressed
+                      00255                                 ; Обработка нажатия клавиши SB3 + проверк�
                             � нажатия сразу первой
-0071   1985           00252                                 btfsc GPIO, GPIO3
-0072   2???           00253                                 GOTO ONLY_SB3
-                      00254                                         ; Если нажаты две кнопки
-0073   1920           00255                                         btfsc sound_flags, snd3_flag
-0074   2???           00256                                                 GOTO Reset2SecTimer; Если текущий режим 
+0071   1985           00256                                 btfsc GPIO, GPIO3
+0072   2???           00257                                 GOTO ONLY_SB3
+                      00258                                         ; Если нажаты две кнопки
+0073   1920           00259                                         btfsc sound_flags, snd3_flag
+0074   2???           00260                                                 GOTO Reset2SecTimer; Если текущий режим 
                             подошёл
-                      00257                                                 
-                      00258                                                 ; Если не режим текущий или не з
+                      00261                                                 
+                      00262                                                 ; Если не режим текущий или не з
                             апущен просто       
-0075   128B           00259                                                 bcf INTCON, T0IE
-0076   3001           00260                                                 movlw 1h
-0077   05A1           00261                                                 andwf pc_states, f
-0078   2???           00262                                                 CALL Start_Mode3
-0079   100B           00263                                                 bcf INTCON, GPIF
-007A   2???           00264                                                 CALL SavePortStates
-007B   0009           00265                                                 retfie
-                      00266                                 
+0075   128B           00263                                                 bcf INTCON, T0IE
+0076   3001           00264                                                 movlw 1h
+0077   05A1           00265                                                 andwf pc_states, f
+0078   2???           00266                                                 CALL Start_Mode3
+0079   100B           00267                                                 bcf INTCON, GPIF
+007A   2???           00268                                                 CALL SavePortStates
+007B   0009           00269                                                 retfie
+                      00270                                 
 Warning[207]: Found label after column 1. (ONLY_SB3)
-007C                  00267                                 ONLY_SB3
-                      00268                                                 ; Запуск таймера на 1 мс в ожида�
-                            �ии нажатия ПЕРВОЙ  кнопки, после этого происходит об
-007C   1820           00269                                         btfsc sound_flags, snd1_flag
-007D   2???           00270                                                 GOTO Reset2SecTimer; Если текущий режим 
-MPASM 5.76                          MAIN.ASM   11-25-2021  16:44:42         PAGE  7
+007C                  00271                                 ONLY_SB3
+MPASM 5.76                          MAIN.ASM   11-28-2021  14:29:25         PAGE  7
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
   VALUE
 
+                      00272                                                 ; Запуск таймера на 1 мс в ожида�
+                            �ии нажатия ПЕРВОЙ  кнопки, после этого происходит об
+007C   1820           00273                                         btfsc sound_flags, snd1_flag
+007D   2???           00274                                                 GOTO Reset2SecTimer; Если текущий режим 
                             подошёл
-                      00271                                                 
-                      00272                                                 ; Если не режим текущий или не з
+                      00275                                                 
+                      00276                                                 ; Если не режим текущий или не з
                             апущен просто       
-007E   110B           00273                                                 bcf INTCON, T0IF
-007F   18A1           00274                                                 btfsc pc_states, btn_wait_flag          ; Проверк
+007E   110B           00277                                                 bcf INTCON, T0IF
+007F   18A1           00278                                                 btfsc pc_states, btn_wait_flag          ; Проверк
                             а, что таймер уже запущен
-0080   2???           00275                                                 GOTO ONLY_set_bitSB3
-                      00276                                                 ; Если не запущен таймер
-0081   3042           00277                                                 movlw b'01000010' 
-0082   1683           00278                                                 banksel OPTION_REG
+0080   2???           00279                                                 GOTO ONLY_set_bitSB3
+                      00280                                                 ; Если не запущен таймер
+0081   3042           00281                                                 movlw b'01000010' 
+0082   1683           00282                                                 banksel OPTION_REG
 Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
-0083   0081           00279                                                 movwf OPTION_REG
-0084   30BB           00280                                                 movlw 0BBh
-0085   1283           00281                                                 banksel TMR0
-0086   0081           00282                                                 movwf TMR0                                      ; Тут
+0083   0081           00283                                                 movwf OPTION_REG
+0084   30BB           00284                                                 movlw 0BBh
+0085   1283           00285                                                 banksel TMR0
+0086   0081           00286                                                 movwf TMR0                                      ; Тут
                              стартовал таймер на 1 мс
-0087   168B           00283                                                 bsf INTCON, T0IE                        ; Тут раз�
+0087   168B           00287                                                 bsf INTCON, T0IE                        ; Тут раз�
                             �ешили преоывания
-0088   14A1           00284                                                 bsf pc_states, btn_wait_flag
+0088   14A1           00288                                                 bsf pc_states, btn_wait_flag
 Warning[207]: Found label after column 1. (ONLY_set_bitSB3)
-0089                  00285                                         ONLY_set_bitSB3
-0089   15A1           00286                                                 bsf pc_states, btn3_st                  ; Запись, 
+0089                  00289                                         ONLY_set_bitSB3
+0089   15A1           00290                                                 bsf pc_states, btn3_st                  ; Запись, 
                             что кнопка 2 нажата 
-                      00287                                                 ;CALL Start_Mode2
-008A   100B           00288                                                 bcf INTCON, GPIF
-008B   2???           00289                                                 CALL SavePortStates
-008C   0009           00290                                                 retfie
-                      00291                                         
-                      00292         
-008D                  00293 Start_Mode3
-                      00294         ; Запустить таймер для времени в 2 сек (Таймер 0)
-008D   2???           00295         CALL Start2SecTmr
-                      00296         ; Запустить таймер 1 для отрабатывания звука с заданн
+                      00291                                                 ;CALL Start_Mode2
+008A   100B           00292                                                 bcf INTCON, GPIF
+008B   2???           00293                                                 CALL SavePortStates
+008C   0009           00294                                                 retfie
+                      00295 
+                      00296         
+008D                  00297 Start_Mode3
+                      00298         ; Запустить таймер для времени в 2 сек (Таймер 0)
+008D   2???           00299         CALL Start2SecTmr
+                      00300         ; Запустить таймер 1 для отрабатывания звука с заданн
                             ой частотой в 3 кГц
-008E   1920           00297         btfsc sound_flags, snd3_flag
-008F   0008           00298         return; Если текущий режим подошёл
-                      00299         ; Если не режим текущий или не запущен просто
-0090   30FE           00300         movlw 0FEh
-0091   00A2           00301         movwf T1H_REG
-0092   1283           00302         banksel TMR1H
-0093   008F           00303         movwf TMR1H
-0094   30B3           00304         movlw 0B3h
-0095   00A3           00305         movwf T1L_REG
-0096   008E           00306         movwf TMR1L
-0097   1683           00307         banksel PIE1
+008E   1920           00301         btfsc sound_flags, snd3_flag
+008F   0008           00302         return; Если текущий режим подошёл
+                      00303         ; Если не режим текущий или не запущен просто
+0090   30FE           00304         movlw 0FEh
+0091   00A2           00305         movwf T1H_REG
+0092   1283           00306         banksel TMR1H
+0093   008F           00307         movwf TMR1H
+0094   30B3           00308         movlw 0B3h
+0095   00A3           00309         movwf T1L_REG
+0096   008E           00310         movwf TMR1L
+0097   1683           00311         banksel PIE1
 Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
-0098   140C           00308         bsf PIE1, TMR1IE
-0099   170B           00309         bsf INTCON, PEIE
-009A   1283           00310         banksel T1CON
-009B   1410           00311         bsf T1CON, TMR1ON       ; Запускаем сам таймер
-009C   1520           00312         bsf sound_flags, snd3_flag
-009D   0008           00313         return
-MPASM 5.76                          MAIN.ASM   11-25-2021  16:44:42         PAGE  8
+0098   140C           00312         bsf PIE1, TMR1IE
+0099   170B           00313         bsf INTCON, PEIE
+MPASM 5.76                          MAIN.ASM   11-28-2021  14:29:25         PAGE  8
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
   VALUE
 
                       00314         
-009E                  00315 Start2SecTmr
-009E   3046           00316         movlw b'01000110'
-009F   1683           00317         banksel OPTION_REG
+009A   30F2           00315         movlw b'11110010'
+009B   00A7           00316         movwf Lcd_data
+009C   2???           00317         CALL Fill_LCD
+                      00318         
+009D   1283           00319         banksel T1CON
+009E   1410           00320         bsf T1CON, TMR1ON       ; Запускаем сам таймер
+009F   1520           00321         bsf sound_flags, snd3_flag
+00A0   0008           00322         return
+                      00323         
+00A1                  00324 Start2SecTmr
+00A1   3046           00325         movlw b'01000110'
+00A2   1683           00326         banksel OPTION_REG
 Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
-00A0   0081           00318         movwf OPTION_REG
-00A1   307C           00319         movlw 7Ch
-00A2   00A4           00320         movwf T02SecScaler
-00A3   168B           00321         bsf INTCON, T0IE                        ; Тут разрешили преоывания
-00A4   110B           00322         bcf INTCON, T0IF
-00A5   0008           00323         return
-                      00324         
-00A6                  00325 T0_INT
-                      00326         ;bsf INTCON, GIE
-                      00327         
-00A6   1CA1           00328         btfss pc_states, btn_wait_flag
-00A7   2???           00329         GOTO Check_on2sec
-                      00330                 ; Если по истечению 1 мс для кнопок
-00A8   1D21           00331                 btfss pc_states, btn2_st
-00A9   2???           00332                 GOTO Check_btn3
-                      00333                         ; Если нажата 1 кнопка
-00AA   1DA1           00334                         btfss pc_states, btn3_st                ; Нажата ли вторая?
-00AB   2???           00335                         GOTO Pressed_ONLY_btn2 ; Если нажата только одна
-                      00336                                 ; Если нажаты две кнопки
-00AC   3001           00337                                 movlw 1h
-00AD   05A1           00338                                 andwf pc_states, f
-00AE   2???           00339                                 CALL Start_Mode3
-00AF   0009           00340                                 retfie
+00A3   0081           00327         movwf OPTION_REG
+00A4   307C           00328         movlw 7Ch
+00A5   00A4           00329         movwf T02SecScaler
+00A6   168B           00330         bsf INTCON, T0IE                        ; Тут разрешили преоывания
+00A7   110B           00331         bcf INTCON, T0IF
+00A8   0008           00332         return
+                      00333         
+00A9                  00334 T0_INT
+                      00335         ;bsf INTCON, GIE
+                      00336         
+00A9   1CA1           00337         btfss pc_states, btn_wait_flag
+00AA   2???           00338         GOTO Check_on2sec
+                      00339                 ; Если по истечению 1 мс для кнопок
+00AB   1D21           00340                 btfss pc_states, btn2_st
+00AC   2???           00341                 GOTO Check_btn3
+                      00342                         ; Если нажата 1 кнопка
+00AD   1DA1           00343                         btfss pc_states, btn3_st                ; Нажата ли вторая?
+00AE   2???           00344                         GOTO Pressed_ONLY_btn2 ; Если нажата только одна
+                      00345                                 ; Если нажаты две кнопки
+00AF   3001           00346                                 movlw 1h
+00B0   05A1           00347                                 andwf pc_states, f
+00B1   2???           00348                                 CALL Start_Mode3
+00B2   0009           00349                                 retfie
 Warning[207]: Found label after column 1. (Pressed_ONLY_btn2)
-00B0                  00341                         Pressed_ONLY_btn2
-00B0   3001           00342                                 movlw 1h
-00B1   05A1           00343                                 andwf pc_states, f
-00B2   2???           00344                                 CALL Start_Mode1
-00B3   0009           00345                                 retfie
+00B3                  00350                         Pressed_ONLY_btn2
+00B3   3001           00351                                 movlw 1h
+00B4   05A1           00352                                 andwf pc_states, f
+00B5   2???           00353                                 CALL Start_Mode1
+00B6   0009           00354                                 retfie
 Warning[207]: Found label after column 1. (Check_btn3)
-00B4                  00346                 Check_btn3
-                      00347                         ; Если нажата ТОЛЬКО 2 кнопка
-00B4   3001           00348                         movlw 1h
-00B5   05A1           00349                         andwf pc_states, f
-00B6   2???           00350                         CALL Start_Mode2
-00B7   0009           00351                         retfie
-                      00352                         
-                      00353         ; Если вышло время в 2 сек    
+00B7                  00355                 Check_btn3
+                      00356                         ; Если нажата ТОЛЬКО 2 кнопка
+00B7   3001           00357                         movlw 1h
+00B8   05A1           00358                         andwf pc_states, f
+00B9   2???           00359                         CALL Start_Mode2
+00BA   0009           00360                         retfie
+                      00361                         
+                      00362         ; Если вышло время в 2 сек    
 Warning[207]: Found label after column 1. (Check_on2sec)
-00B8                  00354         Check_on2sec            
-00B8   0BA4           00355                 decfsz T02SecScaler, f
-00B9   2???           00356                 GOTO ScalerNotZero
-00BA   2???           00357                 GOTO ScalerISZero
-                      00358                         
+MPASM 5.76                          MAIN.ASM   11-28-2021  14:29:25         PAGE  9
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+00BB                  00363         Check_on2sec            
+00BB   0BA4           00364                 decfsz T02SecScaler, f
+00BC   2???           00365                 GOTO ScalerNotZero
+00BD   2???           00366                 GOTO ScalerISZero
+                      00367                         
 Warning[207]: Found label after column 1. (ScalerISZero)
-00BB                  00359                 ScalerISZero
-00BB   1283           00360                         banksel T1CON
-00BC   01A0           00361                         clrf sound_flags
-MPASM 5.76                          MAIN.ASM   11-25-2021  16:44:42         PAGE  9
-
-
-LOC  OBJECT CODE     LINE SOURCE TEXT
-  VALUE
-
-00BD   128B           00362                         bcf INTCON, T0IE ; Выключаем прерывания Таймера 0
-                      00363                         ;bcf PIE1, TMR0IE ; Выключаем прерывания Таймера 1
-00BE   1010           00364                         bcf T1CON, TMR1ON  ; Выключаем Таймер 1
-00BF   0009           00365                         retfie
-                      00366                         
+00BE                  00368                 ScalerISZero
+00BE   1283           00369                         banksel T1CON
+00BF   01A0           00370                         clrf sound_flags
+00C0   128B           00371                         bcf INTCON, T0IE ; Выключаем прерывания Таймера 0
+                      00372                         ;bcf PIE1, TMR0IE ; Выключаем прерывания Таймера 1
+00C1   1010           00373                         bcf T1CON, TMR1ON  ; Выключаем Таймер 1
+00C2   0009           00374                         retfie
+                      00375                         
 Warning[207]: Found label after column 1. (ScalerNotZero)
-00C0                  00367                 ScalerNotZero
-00C0   3083           00368                         movlw 83h
-00C1   0081           00369                         movwf TMR0
-00C2   110B           00370                         bcf INTCON, T0IF
-00C3   168B           00371                         bsf INTCON, T0IE
-00C4   0009           00372                         retfie
-                      00373                 
-00C5                  00374 T1_INT
-                      00375         ;bsf INTCON, GIE
-00C5   1283           00376         banksel GPIO
-00C6   1C05           00377         btfss GPIO, sound
-00C7   2???           00378         GOTO SET1_inSound
-                      00379                 ; Если сейчас SOUND = 1
-00C8   1005           00380                 bcf GPIO, sound
-00C9   2???           00381                 GOTO T1_refull
+00C3                  00376                 ScalerNotZero
+00C3   3083           00377                         movlw 83h
+00C4   0081           00378                         movwf TMR0
+00C5   110B           00379                         bcf INTCON, T0IF
+00C6   168B           00380                         bsf INTCON, T0IE
+00C7   0009           00381                         retfie
+                      00382                 
+00C8                  00383 T1_INT
+                      00384         ;bsf INTCON, GIE
+00C8   1283           00385         banksel GPIO
+00C9   1C05           00386         btfss GPIO, sound
+00CA   2???           00387         GOTO SET1_inSound
+                      00388                 ; Если сейчас SOUND = 1
+00CB   1005           00389                 bcf GPIO, sound
+00CC   2???           00390                 GOTO T1_refull
 Warning[207]: Found label after column 1. (SET1_inSound)
-00CA                  00382         SET1_inSound ; Если сейчас SOUND = 0
-00CA   1405           00383                 bsf GPIO, sound
-                      00384                 
-Warning[207]: Found label after column 1. (T1_refull)
-00CB                  00385         T1_refull
-00CB   0822           00386                 movf T1H_REG, w
-00CC   008F           00387                 movwf TMR1H
-00CD   0823           00388                 movf T1L_REG, w
-00CE   008E           00389                 movwf TMR1L
-00CF   1283           00390                 banksel PIR1
-00D0   100C           00391                 bcf PIR1, TMR1IF
-00D1   0009           00392                 retfie
+00CD                  00391         SET1_inSound ; Если сейчас SOUND = 0
+00CD   1405           00392                 bsf GPIO, sound
                       00393                 
-00D2                  00394 Start_Mode1
-                      00395         ; Запустить таймер для времени в 2 сек (Таймер 0)
-00D2   2???           00396         CALL Start2SecTmr
-                      00397         ; Запустить таймер 1 для отрабатывания звука с заданн
-                            ой частотой в 3 кГц
-00D3   1820           00398         btfsc sound_flags, snd1_flag
-00D4   0008           00399         return; Если текущий режим подошёл
-                      00400         ; Если не режим текущий или не запущен просто
-00D5   30FC           00401         movlw 0FCh
-00D6   00A2           00402         movwf T1H_REG
-00D7   1283           00403         banksel TMR1H
-00D8   008F           00404         movwf TMR1H
-00D9   3018           00405         movlw 18h
-00DA   00A3           00406         movwf T1L_REG
-00DB   008E           00407         movwf TMR1L
-00DC   1683           00408         banksel PIE1
-Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
-00DD   140C           00409         bsf PIE1, TMR1IE
-MPASM 5.76                          MAIN.ASM   11-25-2021  16:44:42         PAGE 10
+Warning[207]: Found label after column 1. (T1_refull)
+00CE                  00394         T1_refull
+00CE   0822           00395                 movf T1H_REG, w
+00CF   008F           00396                 movwf TMR1H
+00D0   0823           00397                 movf T1L_REG, w
+00D1   008E           00398                 movwf TMR1L
+00D2   1283           00399                 banksel PIR1
+00D3   100C           00400                 bcf PIR1, TMR1IF
+00D4   0009           00401                 retfie
+                      00402 
+00D5                  00403 Fill_LCD
+00D5   3008           00404         movlw .8
+00D6   00A8           00405         movwf Loop_ident
+Warning[207]: Found label after column 1. (Loop_bits)
+00D7                  00406         Loop_bits
+Message[305]: Using default destination of 1 (file).
+00D7   0BA8           00407                 decfsz Loop_ident
+00D8   2???           00408                         GOTO Fill_LCD_bit
+00D9   2???           00409                         GOTO Shift_REG
+MPASM 5.76                          MAIN.ASM   11-28-2021  14:29:25         PAGE 10
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
   VALUE
 
-00DE   170B           00410         bsf INTCON, PEIE
-00DF   1283           00411         banksel T1CON
-00E0   1410           00412         bsf T1CON, TMR1ON       ; Запускаем сам таймер
-00E1   1420           00413         bsf sound_flags, snd1_flag
-00E2   0008           00414         return
-                      00415         
-                      00416         
-00E3                  00417 Start_Mode2
-                      00418 ; Запустить таймер для времени в 2 сек (Таймер 0)
-00E3   2???           00419         CALL Start2SecTmr
-                      00420         ; Запустить таймер 1 для отрабатывания звука с заданн
+Warning[207]: Found label after column 1. (Fill_LCD_bit)
+00DA                  00410                         Fill_LCD_bit
+00DA   1C27           00411                                 btfss Lcd_data, 0h
+00DB   2???           00412                                         GOTO Set_0
+00DC   1485           00413                                                 bsf GPIO, GPIO1
+00DD   1585           00414                                                 bsf GPIO, GPIO3
+00DE   1185           00415                                                 bcf GPIO, GPIO3
+00DF   2???           00416                                                 GOTO Loop_bits
+Warning[207]: Found label after column 1. (Set_0)
+00E0                  00417                                         Set_0
+00E0   1085           00418                                                 bcf GPIO, GPIO1
+00E1   1585           00419                                                 bsf GPIO, GPIO3
+00E2   1185           00420                                                 bcf GPIO, GPIO3
+00E3   2???           00421                                                 GOTO Loop_bits
+                      00422                                                 
+Warning[207]: Found label after column 1. (Shift_REG)
+00E4                  00423         Shift_REG 
+00E4   1505           00424                 bsf GPIO, GPIO2
+00E5   1105           00425                 bcf GPIO, GPIO2
+00E6   0008           00426                 return
+                      00427 
+00E7                  00428 Start_Mode1
+                      00429         ; Запустить таймер для времени в 2 сек (Таймер 0)
+00E7   2???           00430         CALL Start2SecTmr
+                      00431         ; Запустить таймер 1 для отрабатывания звука с заданн
                             ой частотой в 3 кГц
-00E4   18A0           00421         btfsc sound_flags, snd2_flag
-00E5   0008           00422         return; Если текущий режим подошёл
-                      00423         ; Если не режим текущий или не запущен просто
-00E6   30FE           00424         movlw 0FEh
-00E7   00A2           00425         movwf T1H_REG
-00E8   1283           00426         banksel TMR1H
-00E9   008F           00427         movwf TMR1H
-00EA   300C           00428         movlw 0Ch
-00EB   00A3           00429         movwf T1L_REG
-00EC   008E           00430         movwf TMR1L
-00ED   1683           00431         banksel PIE1
+00E8   1820           00432         btfsc sound_flags, snd1_flag
+00E9   0008           00433         return; Если текущий режим подошёл
+                      00434         ; Если не режим текущий или не запущен просто
+00EA   30FC           00435         movlw 0FCh
+00EB   00A2           00436         movwf T1H_REG
+00EC   1283           00437         banksel TMR1H
+00ED   008F           00438         movwf TMR1H
+00EE   3018           00439         movlw 18h
+00EF   00A3           00440         movwf T1L_REG
+00F0   008E           00441         movwf TMR1L
+00F1   1683           00442         banksel PIE1
 Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
-00EE   140C           00432         bsf PIE1, TMR1IE
-00EF   170B           00433         bsf INTCON, PEIE
-00F0   1283           00434         banksel T1CON
-00F1   1410           00435         bsf T1CON, TMR1ON       ; Запускаем сам таймер
-00F2   14A0           00436         bsf sound_flags, snd2_flag
-00F3   0008           00437         return
-                      00438 
-00F4                  00439 START
-00F4   2???           00440         CALL Init
+00F2   140C           00443         bsf PIE1, TMR1IE
+00F3   170B           00444         bsf INTCON, PEIE
+                      00445         
+00F4   3060           00446         movlw b'01100000'
+00F5   00A7           00447         movwf Lcd_data
+00F6   2???           00448         CALL Fill_LCD
+                      00449         
+00F7   1283           00450         banksel T1CON
+00F8   1410           00451         bsf T1CON, TMR1ON       ; Запускаем сам таймер
+00F9   1420           00452         bsf sound_flags, snd1_flag
+00FA   0008           00453         return
+                      00454         
+                      00455         
+00FB                  00456 Start_Mode2
+                      00457 ; Запустить таймер для времени в 2 сек (Таймер 0)
+MPASM 5.76                          MAIN.ASM   11-28-2021  14:29:25         PAGE 11
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+00FB   2???           00458         CALL Start2SecTmr
+                      00459         ; Запустить таймер 1 для отрабатывания звука с заданн
+                            ой частотой в 3 кГц
+00FC   18A0           00460         btfsc sound_flags, snd2_flag
+00FD   0008           00461         return; Если текущий режим подошёл
+                      00462         ; Если не режим текущий или не запущен просто
+00FE   30FE           00463         movlw 0FEh
+00FF   00A2           00464         movwf T1H_REG
+0100   1283           00465         banksel TMR1H
+0101   008F           00466         movwf TMR1H
+0102   300C           00467         movlw 0Ch
+0103   00A3           00468         movwf T1L_REG
+0104   008E           00469         movwf TMR1L
+0105   1683           00470         banksel PIE1
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0106   140C           00471         bsf PIE1, TMR1IE
+0107   170B           00472         bsf INTCON, PEIE
+                      00473         
+0108   30DA           00474         movlw b'11011010'
+0109   00A7           00475         movwf Lcd_data
+010A   2???           00476         CALL Fill_LCD
+                      00477         
+010B   1283           00478         banksel T1CON
+010C   1410           00479         bsf T1CON, TMR1ON       ; Запускаем сам таймер
+010D   14A0           00480         bsf sound_flags, snd2_flag
+010E   0008           00481         return
+                      00482 
+010F                  00483 START
+010F   2???           00484         CALL Init
 Warning[207]: Found label after column 1. (Start_loop)
-00F5                  00441         Start_loop
-00F5   2???           00442         GOTO Start_loop
-                      00443 ;====================================================================
-3FD4                  00444       END
-MPASM 5.76                          MAIN.ASM   11-25-2021  16:44:42         PAGE 11
+0110                  00485         Start_loop
+0110   2???           00486         GOTO Start_loop
+                      00487 ;====================================================================
+3FD4                  00488       END
+MPASM 5.76                          MAIN.ASM   11-28-2021  14:29:25         PAGE 12
 
 
 SYMBOL TABLE
@@ -614,8 +669,8 @@ CMIE                              00000003
 CMIF                              00000003
 COUT                              00000006
 CheckOnDownChanges                00000031
-Check_btn3                        000000B4
-Check_on2sec                      000000B8
+Check_btn3                        000000B7
+Check_on2sec                      000000BB
 CompareSB2_1                      00000034
 CompareSB3                        00000038
 CompareSB3_1                      0000003C
@@ -629,15 +684,17 @@ EEIE                              00000007
 EEIF                              00000007
 F                                 00000001
 FSR                               00000004
+Fill_LCD                          000000D5
+Fill_LCD_bit                      000000DA
 GIE                               00000007
-GO                                00000001
-GO_DONE                           00000001
-MPASM 5.76                          MAIN.ASM   11-25-2021  16:44:42         PAGE 12
+MPASM 5.76                          MAIN.ASM   11-28-2021  14:29:25         PAGE 13
 
 
 SYMBOL TABLE
   LABEL                             VALUE 
 
+GO                                00000001
+GO_DONE                           00000001
 GO_NOT_DONE                       00000001
 GP0                               00000000
 GP1                               00000001
@@ -682,21 +739,24 @@ IRP                               00000007
 IfUp                              0000004C
 Init                              00000000
 LastPortState                     00000025
+Lcd_data                          00000027
+Loop_bits                         000000D7
+Loop_ident                        00000028
 NOT_BOD                           00000000
 NOT_BOR                           00000000
 NOT_DONE                          00000001
 NOT_GPPU                          00000007
-NOT_PD                            00000003
-NOT_POR                           00000001
-NOT_T1SYNC                        00000002
-NOT_TO                            00000004
-Nothing                           00000040
-MPASM 5.76                          MAIN.ASM   11-25-2021  16:44:42         PAGE 13
+MPASM 5.76                          MAIN.ASM   11-28-2021  14:29:25         PAGE 14
 
 
 SYMBOL TABLE
   LABEL                             VALUE 
 
+NOT_PD                            00000003
+NOT_POR                           00000001
+NOT_T1SYNC                        00000002
+NOT_TO                            00000004
+Nothing                           00000040
 ONLY_SB2                          0000005A
 ONLY_SB3                          0000007C
 ONLY_set_bitSB2                   00000067
@@ -714,7 +774,7 @@ PS0                               00000000
 PS1                               00000001
 PS2                               00000002
 PSA                               00000003
-Pressed_ONLY_btn2                 000000B0
+Pressed_ONLY_btn2                 000000B3
 RD                                00000000
 RP0                               00000005
 RP1                               00000006
@@ -722,40 +782,42 @@ Reset2SecTimer                    00000042
 SB2_check                         0000004C
 SB3_Pressed                       00000071
 SB3_check                         0000006B
-SET1_inSound                      000000CA
-START                             000000F4
+SET1_inSound                      000000CD
+START                             0000010F
 STATUS                            00000003
 SavePortStates                    0000002D
-ScalerISZero                      000000BB
-ScalerNotZero                     000000C0
-Start2SecTmr                      0000009E
-Start_Mode1                       000000D2
-Start_Mode2                       000000E3
+ScalerISZero                      000000BE
+ScalerNotZero                     000000C3
+Set_0                             000000E0
+Shift_REG                         000000E4
+Start2SecTmr                      000000A1
+Start_Mode1                       000000E7
+Start_Mode2                       000000FB
 Start_Mode3                       0000008D
-Start_loop                        000000F5
+Start_loop                        00000110
 T02SecScaler                      00000024
 T0CS                              00000005
 T0IE                              00000005
 T0IF                              00000002
 T0SE                              00000004
-T0_INT                            000000A6
+T0_INT                            000000A9
 T1CKPS0                           00000004
 T1CKPS1                           00000005
 T1CON                             00000010
 T1CON_INIT                        00000000
-T1H_REG                           00000022
-T1IE                              00000000
-T1IF                              00000000
-T1L_REG                           00000023
-T1OSCEN                           00000003
-T1_INT                            000000C5
-T1_refull                         000000CB
-MPASM 5.76                          MAIN.ASM   11-25-2021  16:44:42         PAGE 14
+MPASM 5.76                          MAIN.ASM   11-28-2021  14:29:25         PAGE 15
 
 
 SYMBOL TABLE
   LABEL                             VALUE 
 
+T1H_REG                           00000022
+T1IE                              00000000
+T1IF                              00000000
+T1L_REG                           00000023
+T1OSCEN                           00000003
+T1_INT                            000000C8
+T1_refull                         000000CE
 TMR0                              00000001
 TMR0IE                            00000005
 TMR0IF                            00000002
@@ -802,6 +864,12 @@ _BODEN_ON                         00003FFF
 _BOREN_OFF                        00003FBF
 _BOREN_ON                         00003FFF
 _CONFIG                           00002007
+MPASM 5.76                          MAIN.ASM   11-28-2021  14:29:25         PAGE 16
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
 _CPD_OFF                          00003FFF
 _CPD_ON                           00003EFF
 _CP_OFF                           00003FFF
@@ -809,12 +877,6 @@ _CP_ON                            00003F7F
 _DEVID1                           00002006
 _EC_OSC                           00003FFB
 _EXTRC_OSC_CLKOUT                 00003FFF
-MPASM 5.76                          MAIN.ASM   11-25-2021  16:44:42         PAGE 15
-
-
-SYMBOL TABLE
-  LABEL                             VALUE 
-
 _EXTRC_OSC_NOCLKOUT               00003FFE
 _FOSC_EC                          00003FFB
 _FOSC_EXTRCCLK                    00003FFF
@@ -856,7 +918,7 @@ sound                             00000000
 sound_flags                       00000020
 
 Errors   :     0
-Warnings :    23 reported,     0 suppressed
-Messages :    14 reported,     0 suppressed
+Warnings :    27 reported,     0 suppressed
+Messages :    15 reported,     0 suppressed
 
 

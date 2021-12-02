@@ -1,37 +1,42 @@
 Warning[205] ..\MAIN.ASM 14 : Found directive in column 1. (__CONFIG)
-Message[302] ..\MAIN.ASM 84 : Register in operand not in bank 0.  Ensure that bank bits are correct.
-Message[302] ..\MAIN.ASM 92 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] ..\MAIN.ASM 88 : Register in operand not in bank 0.  Ensure that bank bits are correct.
 Message[302] ..\MAIN.ASM 96 : Register in operand not in bank 0.  Ensure that bank bits are correct.
-Message[302] ..\MAIN.ASM 105 : Register in operand not in bank 0.  Ensure that bank bits are correct.
-Message[302] ..\MAIN.ASM 113 : Register in operand not in bank 0.  Ensure that bank bits are correct.
-Message[302] ..\MAIN.ASM 127 : Register in operand not in bank 0.  Ensure that bank bits are correct.
-Warning[207] ..\MAIN.ASM 157 : Found label after column 1. (CompareSB2_1)
-Warning[219] ..\MAIN.ASM 160 : Invalid RAM location specified.
-Message[302] ..\MAIN.ASM 160 : Register in operand not in bank 0.  Ensure that bank bits are correct.
-Warning[207] ..\MAIN.ASM 163 : Found label after column 1. (CompareSB3)
-Warning[207] ..\MAIN.ASM 168 : Found label after column 1. (CompareSB3_1)
-Warning[219] ..\MAIN.ASM 171 : Invalid RAM location specified.
-Message[302] ..\MAIN.ASM 171 : Register in operand not in bank 0.  Ensure that bank bits are correct.
-Warning[207] ..\MAIN.ASM 173 : Found label after column 1. (Nothing)
-Warning[207] ..\MAIN.ASM 195 : Found label after column 1. (IfUp)
-Warning[207] ..\MAIN.ASM 196 : Found label after column 1. (SB2_check)
-Warning[207] ..\MAIN.ASM 212 : Found label after column 1. (ONLY_SB2)
-Message[302] ..\MAIN.ASM 224 : Register in operand not in bank 0.  Ensure that bank bits are correct.
-Warning[207] ..\MAIN.ASM 230 : Found label after column 1. (ONLY_set_bitSB2)
-Warning[207] ..\MAIN.ASM 238 : Found label after column 1. (SB3_check)
-Warning[207] ..\MAIN.ASM 246 : Found label after column 1. (SB3_Pressed)
-Warning[207] ..\MAIN.ASM 259 : Found label after column 1. (ONLY_SB3)
-Message[302] ..\MAIN.ASM 271 : Register in operand not in bank 0.  Ensure that bank bits are correct.
-Warning[207] ..\MAIN.ASM 277 : Found label after column 1. (ONLY_set_bitSB3)
-Message[302] ..\MAIN.ASM 300 : Register in operand not in bank 0.  Ensure that bank bits are correct.
-Message[302] ..\MAIN.ASM 310 : Register in operand not in bank 0.  Ensure that bank bits are correct.
-Warning[207] ..\MAIN.ASM 333 : Found label after column 1. (Pressed_ONLY_btn2)
-Warning[207] ..\MAIN.ASM 338 : Found label after column 1. (Check_btn3)
-Warning[207] ..\MAIN.ASM 346 : Found label after column 1. (Check_on2sec)
-Warning[207] ..\MAIN.ASM 351 : Found label after column 1. (ScalerISZero)
-Warning[207] ..\MAIN.ASM 359 : Found label after column 1. (ScalerNotZero)
-Warning[207] ..\MAIN.ASM 374 : Found label after column 1. (SET1_inSound)
-Warning[207] ..\MAIN.ASM 377 : Found label after column 1. (T1_refull)
-Message[302] ..\MAIN.ASM 401 : Register in operand not in bank 0.  Ensure that bank bits are correct.
-Message[302] ..\MAIN.ASM 424 : Register in operand not in bank 0.  Ensure that bank bits are correct.
-Warning[207] ..\MAIN.ASM 433 : Found label after column 1. (Start_loop)
+Message[302] ..\MAIN.ASM 100 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] ..\MAIN.ASM 109 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] ..\MAIN.ASM 117 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] ..\MAIN.ASM 131 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Warning[207] ..\MAIN.ASM 161 : Found label after column 1. (CompareSB2_1)
+Warning[207] ..\MAIN.ASM 167 : Found label after column 1. (CompareSB3)
+Warning[207] ..\MAIN.ASM 172 : Found label after column 1. (CompareSB3_1)
+Warning[207] ..\MAIN.ASM 177 : Found label after column 1. (Nothing)
+Warning[207] ..\MAIN.ASM 199 : Found label after column 1. (IfUp)
+Warning[207] ..\MAIN.ASM 200 : Found label after column 1. (SB2_check)
+Warning[207] ..\MAIN.ASM 220 : Found label after column 1. (ONLY_SB2)
+Message[302] ..\MAIN.ASM 232 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Warning[207] ..\MAIN.ASM 238 : Found label after column 1. (ONLY_set_bitSB2)
+Warning[207] ..\MAIN.ASM 246 : Found label after column 1. (SB3_check)
+Warning[207] ..\MAIN.ASM 254 : Found label after column 1. (SB3_Pressed)
+Warning[207] ..\MAIN.ASM 271 : Found label after column 1. (ONLY_SB3)
+Message[302] ..\MAIN.ASM 283 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Warning[207] ..\MAIN.ASM 289 : Found label after column 1. (ONLY_set_bitSB3)
+Message[302] ..\MAIN.ASM 312 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] ..\MAIN.ASM 327 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Warning[207] ..\MAIN.ASM 350 : Found label after column 1. (Pressed_ONLY_btn2)
+Warning[207] ..\MAIN.ASM 355 : Found label after column 1. (Check_btn3)
+Warning[207] ..\MAIN.ASM 363 : Found label after column 1. (Check_on2sec)
+Warning[207] ..\MAIN.ASM 368 : Found label after column 1. (ScalerISZero)
+Warning[207] ..\MAIN.ASM 376 : Found label after column 1. (ScalerNotZero)
+Warning[207] ..\MAIN.ASM 391 : Found label after column 1. (SET1_inSound)
+Warning[207] ..\MAIN.ASM 394 : Found label after column 1. (T1_refull)
+Warning[207] ..\MAIN.ASM 407 : Found label after column 1. (Loop_bits)
+Message[305] ..\MAIN.ASM 408 : Using default destination of 1 (file).
+Warning[207] ..\MAIN.ASM 411 : Found label after column 1. (Fill_LCD_bit)
+Message[305] ..\MAIN.ASM 424 : Using default destination of 1 (file).
+Warning[207] ..\MAIN.ASM 428 : Found label after column 1. (Set_0)
+Message[305] ..\MAIN.ASM 439 : Using default destination of 1 (file).
+Warning[207] ..\MAIN.ASM 443 : Found label after column 1. (Shift_REG)
+Message[305] ..\MAIN.ASM 445 : Using default destination of 1 (file).
+Message[305] ..\MAIN.ASM 448 : Using default destination of 1 (file).
+Message[302] ..\MAIN.ASM 467 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] ..\MAIN.ASM 495 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Warning[207] ..\MAIN.ASM 509 : Found label after column 1. (Start_loop)
