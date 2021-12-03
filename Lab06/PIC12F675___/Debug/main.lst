@@ -1,4 +1,4 @@
-MPASM 5.76                          MAIN.ASM   12-2-2021  15:15:54         PAGE  1
+MPASM 5.76                          MAIN.ASM   12-3-2021  1:00:29         PAGE  1
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
@@ -34,698 +34,951 @@ Warning[205]: Found directive in column 1. (__CONFIG)
                       00017 ; CONSTANTS
                       00018 ;====================================================================
                       00019 
-  00000000            00020 GPIO_DATA equ b'0000000' 
+  00000002            00020 GPIO_DATA equ b'000010' 
   000000C8            00021 INTERRUPT_INIT equ b'11001000'
   00000000            00022 PIE1_INIT equ b'00000000'
   00000000            00023 TMR1H_INIT equ 0x0
   00000000            00024 TMR1L_INIT equ 0x0
   00000000            00025 TMR0_INIT equ 0x0
-  00000034            00026 WPU_INIT equ b'110100'                  ; GPIO1 И GPIO5 - мбб как READ так и WRITE режим
-                            . Для кнопки (изначально!) и TX; Для RX и Data соответствен�
-  00000003            00027 IOC_INIT equ b'000011'
+  00000036            00026 WPU_INIT equ b'110110'   ;b'110100'                     ;GPIO1 И GPIO5 - мбб как READ так и W
+                            RITE режим. Для кнопки (изначально!) и TX; Для RX и Data соотв
+  00000021            00027 IOC_INIT equ b'100001'
   00000000            00028 T1CON_INIT equ b'00000000'
-                      00029 ;====================================================================
-                      00030 ; VARIABLES
-                      00031 ;====================================================================
-                      00032 
-  00000020            00033 UART_CON equ 20h
+  00000029            00029 TRISIO_INT equ b'00101001' ; b'00101001'
+                      00030 ;====================================================================
+                      00031 ; VARIABLES
+                      00032 ;====================================================================
+                      00033 
+  00000020            00034 UART_CON equ 20h                                ; ИЗНАЧАЛЬНО ДОЛЖЕН БЫТЬ РЕЖИМ 
+                            ПРОСЛУШИВАНИЯ!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 Warning[207]: Found label after column 1. (BUSY_F)
-  00000000            00034         BUSY_F equ 00h
+  00000000            00035         BUSY_F equ 00h
 Warning[207]: Found label after column 1. (TR_F)
-  00000001            00035         TR_F equ 01h
+  00000001            00036         TR_F equ 01h
 Warning[207]: Found label after column 1. (RD_F)
-  00000002            00036         RD_F equ 02h
+  00000002            00037         RD_F equ 02h
+MPASM 5.76                          MAIN.ASM   12-3-2021  1:00:29         PAGE  2
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
 Warning[207]: Found label after column 1. (T0_MODE)
-  00000003            00037         T0_MODE equ 03h
-MPASM 5.76                          MAIN.ASM   12-2-2021  15:15:54         PAGE  2
-
-
-LOC  OBJECT CODE     LINE SOURCE TEXT
-  VALUE
-
+  00000003            00038         T0_MODE equ 03h
 Warning[207]: Found label after column 1. (DATA_INC_F)
-  00000004            00038         DATA_INC_F equ 04h
+  00000004            00039         DATA_INC_F equ 04h
 Warning[207]: Found label after column 1. (BIT9)
-  00000005            00039         BIT9 equ 05h
+  00000005            00040         BIT9 equ 05h
 Warning[207]: Found label after column 1. (SEG7_Display_F)
-  00000006            00040         SEG7_Display_F equ 06h
-Warning[207]: Found label after column 1. (SaveDataOrAddr)
-  00000007            00041         SaveDataOrAddr equ 07h          ; || 0 - Addr | 1 - Data ||
-                      00042 
-  00000021            00043 UART_t0 equ 21h
+  00000006            00041         SEG7_Display_F equ 06h
+Warning[207]: Found label after column 1. (BanReceiveZ9Bit_F)
+  00000007            00042         BanReceiveZ9Bit_F equ 07h;  Флаг запрета приёма сообщений,в кото�
+                            �ом 9 бит имеет значение 0 (т.е. если это ДАННЫЕ)
+                      00043         ;SaveDataOrAddr equ 07h         ; || 0 - Addr | 1 - Data ||
+                      00044 
+  00000021            00045 UART_t0 equ 21h
 Warning[207]: Found label after column 1. (WAIT_HalfBaud)
-  00000000            00044         WAIT_HalfBaud equ 00h
+  00000000            00046         WAIT_HalfBaud equ 00h
 Warning[207]: Found label after column 1. (WAIT_FullBaud)
-  00000001            00045         WAIT_FullBaud equ 01h
-                      00046 ;LEDS_STATES equ 21h
-                      00047 ;LED1 equ 00h
-                      00048 ;LED2 equ 01h
-                      00049 ;LED3 equ 02h
-                      00050 
-                      00051 
+  00000001            00047         WAIT_FullBaud equ 01h
+                      00048 ;LEDS_STATES equ 21h
+                      00049 ;LED1 equ 00h
+                      00050 ;LED2 equ 01h
+                      00051 ;LED3 equ 02h
                       00052 
-  00000000            00053 btn_SEND equ GPIO0
-  00000003            00054 btn_RST equ GPIO3
-  00000001            00055 btn_INC equ GPIO1
-                      00056 
-                      00057 ;pc_states equ 21h
-                      00058 ;in_work_flag equ 00h
-                      00059 ;btn_wait_flag equ 01h
-                      00060 ;btn2_st equ 02h
-                      00061 ;btn3_st equ 03h
-                      00062 
-  00000022            00063 T1H_REG equ 22h
-  00000023            00064 T1L_REG equ 23h
-                      00065 
-  00000024            00066 T02SecScaler equ 24h
+                      00053 
+                      00054 
+  00000000            00055 btn_SEND equ GPIO0
+  00000003            00056 btn_RST equ GPIO3
+  00000001            00057 btn_INC equ GPIO1
+                      00058 
+                      00059 ;pc_states equ 21h
+                      00060 ;in_work_flag equ 00h
+                      00061 ;btn_wait_flag equ 01h
+                      00062 ;btn2_st equ 02h
+                      00063 ;btn3_st equ 03h
+                      00064 
+  00000022            00065 T1H_REG equ 22h
+  00000023            00066 T1L_REG equ 23h
                       00067 
-  00000025            00068 LastPortState equ 25h
+  00000024            00068 T02SecScaler equ 24h
                       00069 
-  00000026            00070 Accum equ 26h
+  00000025            00070 LastPortState equ 25h
                       00071 
-  00000027            00072 Lcd_data equ 27h
+  00000026            00072 Accum equ 26h
                       00073 
-  00000028            00074 Loop_ident equ 28h
+  00000027            00074 Lcd_data equ 27h
                       00075 
-  00000029            00076 SERBUF equ 29h          ; TODO
-  0000002A            00077 TEMP equ 2Ah
-                      00078 
-  00000001            00079 TX equ GPIO1
-  00000005            00080 RX equ GPIO5
-                      00081 
-                      00082 
+  00000028            00076 Loop_ident equ 28h
+                      00077 
+  00000029            00078 SERBUF equ 29h          ; TODO
+  0000002A            00079 TEMP equ 2Ah
+                      00080 
+  00000001            00081 TX equ GPIO1
+  00000005            00082 RX equ GPIO5
+MPASM 5.76                          MAIN.ASM   12-3-2021  1:00:29         PAGE  3
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
                       00083 
-  0000002B            00084 LastPressedBtns equ 2Bh         ;  || 0 bit - SB_SEND | 1 bit - SB_INC/TX | 2 bit - RX/DATA_7_SEG ||
-MPASM 5.76                          MAIN.ASM   12-2-2021  15:15:54         PAGE  3
-
-
-LOC  OBJECT CODE     LINE SOURCE TEXT
-  VALUE
-
-  00000000            00085 SB_SEND_Ch equ 00h
-  00000001            00086 SB_INC_Ch equ 01h
-                      00087 ;--
-                      00088 
-  0000002C            00089 ADDR_reg equ 2Ch
-  0000002D            00090 DATA_reg equ 2Dh
-                      00091 
-  0000002E            00092 ButtonModes equ 2Eh
+                      00084 
+                      00085 
+  0000002B            00086 LastPressedBtns equ 2Bh         ;  || 0 bit - SB_SEND | 1 bit - SB_INC/TX | 2 bit - RX/DATA_7_SEG ||
+  00000000            00087 SB_SEND_Ch equ 00h
+  00000001            00088 SB_INC_Ch equ 01h
+                      00089 ;--
+                      00090 
+  0000002C            00091 ADDR_reg equ 2Ch
+  0000002D            00092 DATA_reg equ 2Dh
+                      00093 
+  0000002E            00094 ButtonModes equ 2Eh
 Warning[207]: Found label after column 1. (SB0_M0)
-  00000000            00093         SB0_M0  equ 00h
+  00000000            00095         SB0_M0  equ 00h
 Warning[207]: Found label after column 1. (SB0_M1)
-  00000001            00094         SB0_M1  equ 01h
-                      00095 
-                      00096 
-  0000002F            00097 SEV_SEGM_reg equ 2Fh
+  00000001            00096         SB0_M1  equ 01h
+                      00097 
                       00098 
-                      00099 
+  0000002F            00099 SEV_SEGM_reg equ 2Fh
                       00100 
-                      00101 
-                      00102 ;====================================================================
-                      00103 ; RESET and INTERRUPT VECTORS
+  00000030            00101 GotMsgDispMode equ 30h
+                      00102 
+                      00103 
                       00104 ;====================================================================
-                      00105 
-                      00106       ; Reset Vector
-                      00107 RST   code  0x0 
-0000   2???           00108       goto  START
-                      00109 
-                      00110 INT code 0x4
-0004   2???           00111         goto IINT_HNDL
-                      00112         
-                      00113         
-                      00114 ;====================================================================
-                      00115 ; CODE SEGMENT
+                      00105 ; RESET and INTERRUPT VECTORS
+                      00106 ;====================================================================
+                      00107 
+                      00108       ; Reset Vector
+                      00109 RST   code  0x0 
+0000   2???           00110       goto  START
+                      00111 
+                      00112 INT code 0x4
+0004   2???           00113         goto IINT_HNDL
+                      00114         
+                      00115         
                       00116 ;====================================================================
-                      00117 
-                      00118 PGM   code
+                      00117 ; CODE SEGMENT
+                      00118 ;====================================================================
                       00119 
-0000                  00120 Init
-                      00121         
-0000   1683           00122         banksel ANSEL
+                      00120 PGM   code
+                      00121 
+0000                  00122 Init
+                      00123         
+0000   1683           00124         banksel ANSEL
 Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
-0001   019F           00123     clrf ANSEL
-                      00124 
-0002   1283           00125     banksel CMCON
-0003   3007           00126     movlw 0x7
-0004   0099           00127     movwf CMCON
-                      00128 
-0005   1283           00129           banksel GPIO
-                      00130     ;movlw b'10' ; Default GPIO data
-0006   3000           00131         movlw GPIO_DATA
-0007   0085           00132     movwf GPIO
-                      00133         
-0008   1683           00134          banksel TRISIO
-MPASM 5.76                          MAIN.ASM   12-2-2021  15:15:54         PAGE  4
+0001   019F           00125     clrf ANSEL
+                      00126 
+0002   1283           00127     banksel CMCON
+0003   3007           00128     movlw 0x7
+0004   0099           00129     movwf CMCON
+                      00130 
+0005   1283           00131           banksel GPIO
+                      00132     ;movlw b'10' ; Default GPIO data
+MPASM 5.76                          MAIN.ASM   12-3-2021  1:00:29         PAGE  4
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
   VALUE
 
-0009   300B           00135     movlw b'00001011'   ; GPIO Port options
+0006   3002           00133         movlw GPIO_DATA
+0007   0085           00134     movwf GPIO
+                      00135         
+0008   1683           00136          banksel TRISIO
+0009   3029           00137     movlw TRISIO_INT   ; GPIO Port options
 Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
-000A   0085           00136     movwf TRISIO
-                      00137         
-000B   1683           00138     banksel OPTION_REG
-000C   3048           00139     movlw b'01001000'       ; Options
+000A   0085           00138     movwf TRISIO
+                      00139         
+000B   1683           00140     banksel OPTION_REG
+000C   3048           00141     movlw b'01001000'       ; Options
 Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
-000D   0081           00140     movwf OPTION_REG
-                      00141 
-                      00142    
+000D   0081           00142     movwf OPTION_REG
                       00143 
-                      00144  
+                      00144    
                       00145 
-000E   1683           00146     banksel WPU
-000F   3034           00147     movlw WPU_INIT  ; Pull ups
+                      00146  
+                      00147 
+000E   1683           00148     banksel WPU
+000F   3036           00149     movlw WPU_INIT  ; Pull ups
 Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
-0010   0095           00148     movwf WPU
-                      00149 
-0011   1283           00150     banksel INTCON
-0012   30C8           00151     movlw INTERRUPT_INIT   ; Interrupts
-0013   008B           00152     movwf INTCON
-                      00153 
-0014   1683           00154     banksel PIE1
-0015   3000           00155     movlw PIE1_INIT  ; Enables timer 1 (16-bit) INTERRRUPT (NO)
+0010   0095           00150     movwf WPU
+                      00151 
+0011   1283           00152     banksel INTCON
+0012   30C8           00153     movlw INTERRUPT_INIT   ; Interrupts
+0013   008B           00154     movwf INTCON
+                      00155 
+0014   1683           00156     banksel PIE1
+0015   3000           00157     movlw PIE1_INIT  ; Enables timer 1 (16-bit) INTERRRUPT (NO)
 Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
-0016   008C           00156     movwf PIE1
-                      00157 
-0017   1283           00158     banksel TMR1H
-0018   3000           00159     movlw TMR1H_INIT
-0019   008F           00160     movwf TMR1H
-001A   3000           00161     movlw TMR1L_INIT
-001B   008E           00162     movwf TMR1L
-                      00163 
-001C   1283           00164     banksel T1CON
-001D   3000           00165     movlw T1CON_INIT    ; Enables timer 1
-001E   0090           00166     movwf T1CON
-                      00167 
-001F   1683           00168     banksel IOC
-0020   3003           00169     movlw IOC_INIT
+0016   008C           00158     movwf PIE1
+                      00159 
+0017   1283           00160     banksel TMR1H
+0018   3000           00161     movlw TMR1H_INIT
+0019   008F           00162     movwf TMR1H
+001A   3000           00163     movlw TMR1L_INIT
+001B   008E           00164     movwf TMR1L
+                      00165 
+001C   1283           00166     banksel T1CON
+001D   3000           00167     movlw T1CON_INIT    ; Enables timer 1
+001E   0090           00168     movwf T1CON
+                      00169 
+001F   1683           00170     banksel IOCB
+0020   3021           00171     movlw IOC_INIT
 Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
-0021   0096           00170     movwf IOC
-                      00171 
-                      00172         ;CALL SavePortStates
-                      00173         
-0022   0008           00174     return
-                      00175 
-0023                  00176 START
-0023   2???           00177         CALL Init
-Warning[207]: Found label after column 1. (MainLoop)
-0024                  00178         MainLoop
-0024   2???           00179                 GOTO MainLoop
-                      00180                 
-                      00181                 
-MPASM 5.76                          MAIN.ASM   12-2-2021  15:15:54         PAGE  5
+0021   0096           00172     movwf IOCB
+                      00173 
+                      00174         ;CALL SavePortStates
+0022   0805           00175         movf GPIO, w
+0023   00A5           00176         movwf LastPortState
+                      00177         
+0024   17A0           00178         bsf UART_CON, BanReceiveZ9Bit_F
+                      00179         
+0025   0008           00180     return
+MPASM 5.76                          MAIN.ASM   12-3-2021  1:00:29         PAGE  5
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
   VALUE
 
-                      00182         
-0025                  00183 IINT_HNDL
-0025   180B           00184         btfsc INTCON,  GPIF
-0026   2???           00185         GOTO GPIO_INT
-0027   190B           00186         btfsc INTCON, T0IF
-0028   2???           00187         GOTO T0_INT
-0029   1283           00188         banksel PIR1
-002A   180C           00189         btfsc PIR1, TMR1IF
-002B   2???           00190         GOTO T1_INT
-002C   0008           00191         return
-                      00192         
-002D                  00193 FindPortDiff
-                      00194         ; Допустим, состояние порта записывается в регистр Las
+                      00181 
+0026                  00182 START
+0026   2???           00183         CALL Init
+Warning[207]: Found label after column 1. (MainLoop)
+0027                  00184         MainLoop
+0027   2???           00185                 GOTO MainLoop
+                      00186                 
+                      00187                 
+                      00188         
+0028                  00189 IINT_HNDL
+0028   180B           00190         btfsc INTCON,  GPIF
+0029   2???           00191         GOTO GPIO_INT
+002A   190B           00192         btfsc INTCON, T0IF
+002B   2???           00193         GOTO T0_INT
+002C   1283           00194         banksel PIR1
+002D   180C           00195         btfsc PIR1, TMR1IF
+002E   2???           00196         GOTO T1_INT
+002F   0009           00197         retfie
+                      00198         
+0030                  00199 FindPortDiff
+                      00200         ; Допустим, состояние порта записывается в регистр Las
                             tPortState
-002D   1283           00195         banksel GPIO
 Warning[207]: Found label after column 1. (Port_GP0)
-002E                  00196         Port_GP0
-002E   1805           00197                 btfsc GPIO, btn_SEND; Если нажата кнопка - то (0)
-002F   2???           00198                         GOTO Port_GP1 ; Если (1)
-0030   1C25           00199                         btfss LastPortState, btn_SEND; Если (0) (Если в LastPortState и был
+0030                  00201         Port_GP0
+0030   1683           00202                 banksel IOCB
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0031   1C16           00203                 btfss IOCB, GPIO0
+0032   2???           00204                         GOTO Port_GP1
+0033   1283           00205                 banksel GPIO
+0034   1805           00206                 btfsc GPIO, btn_SEND; Если нажата кнопка - то (0)
+0035   2???           00207                         GOTO Port_GP1 ; Если (1)
+0036   1C25           00208                         btfss LastPortState, btn_SEND; Если (0) (Если в LastPortState и был
                              0 - то забиваем, иначе - нажата кнопка)
-0031   2???           00200                                 GOTO Port_GP1; Если остаётся быть нажатой
-0032   142B           00201                                 bsf LastPressedBtns, SB_SEND_Ch; Если произошло на сам
+0037   2???           00209                                 GOTO Port_GP1; Если остаётся быть нажатой
+0038   142B           00210                                 bsf LastPressedBtns, SB_SEND_Ch; Если произошло на сам
                             ом деле нажатие
 Warning[207]: Found label after column 1. (Port_GP1)
-0033                  00202         Port_GP1 ; ТОЛЬКО В РЕЖИМЕ ДО отправки {TODO}
-0033   1A20           00203                 btfsc UART_CON, DATA_INC_F
-0034   2???           00204                         GOTO Check_SB_INC; Если 1
-0035   2???           00205                         GOTO Port_GP5; Если 0
+0039                  00211         Port_GP1 ; ТОЛЬКО В РЕЖИМЕ ДО отправки {TODO}
+0039   1683           00212                 banksel IOCB
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+003A   1C96           00213                 btfss IOCB, GPIO1
+003B   2???           00214                         GOTO Port_GP5
+003C   1283           00215                 banksel GPIO
+003D   1A20           00216                 btfsc UART_CON, DATA_INC_F
+003E   2???           00217                         GOTO Check_SB_INC; Если 1
+003F   2???           00218                         GOTO Port_GP5; Если 0
 Warning[207]: Found label after column 1. (Check_SB_INC)
-0036                  00206                 Check_SB_INC
-0036   1885           00207                         btfsc GPIO, btn_INC ; Если нажата кнопка - то (0)
-0037   2???           00208                                 GOTO Port_GP5
-0038   1CA5           00209                                 btfss LastPortState, btn_INC ; Если в LastPortState и был 0 - �
+0040                  00219                 Check_SB_INC
+0040   1885           00220                         btfsc GPIO, btn_INC ; Если нажата кнопка - то (0)
+0041   2???           00221                                 GOTO Port_GP5
+0042   1CA5           00222                                 btfss LastPortState, btn_INC ; Если в LastPortState и был 0 - �
                             �о забиваем, иначе - нажатая кнопка
-0039   2???           00210                                         GOTO Port_GP5 ; Если остаётся 
-003A   14AB           00211                                         bsf LastPressedBtns, SB_INC_Ch ; Если на самом дел
+0043   2???           00223                                         GOTO Port_GP5 ; Если остаётся 
+MPASM 5.76                          MAIN.ASM   12-3-2021  1:00:29         PAGE  6
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0044   14AB           00224                                         bsf LastPressedBtns, SB_INC_Ch ; Если на самом дел
                             е произошло нажатие
 Warning[207]: Found label after column 1. (Port_GP5)
-003B                  00212         Port_GP5
-                      00213         ; Нужна проверка, что RX в режиме чтения (мб и не надо, т
+0045                  00225         Port_GP5
+                      00226         ; Нужна проверка, что RX в режиме чтения (мб и не надо, т
                             ак как не срабатывает прерывание по GPIO во время "выво
-                      00214         ; По СПАДУ вызывается обработка приходящего сообщен�
+                      00227         ; По СПАДУ вызывается обработка приходящего сообщен�
                             �я
-003B   1B20           00215                 btfsc UART_CON, SEG7_Display_F
-003C   0008           00216                         return; Если происходит вывод - то не может быть
+                      00228                 ;btfsc UART_CON, SEG7_Display_F
+                      00229                 ;       return; Если происходит вывод - то не может быть
                              никак подключен порт к RX
-003D   1520           00217                         bsf UART_CON, RD_F; Если не вывод - то мб и RX (устанавл
+                      00230                 ;       bsf UART_CON, RD_F; Если не вывод - то мб и RX (устанавл
                             иваем флаг чтения)
-003E   0008           00218                 return
-                      00219         ;       btfsc UART_CON, SEG7_Display_F
-                      00220         ;               return ; Если вывод на 7-сегментник
-                      00221         ;               ; Если Чтение с RX
-MPASM 5.76                          MAIN.ASM   12-2-2021  15:15:54         PAGE  6
-
-
-LOC  OBJECT CODE     LINE SOURCE TEXT
-  VALUE
-
-                      00222 
-003F                  00223 SB0_SEND_HNDL
-                      00224         ; 4 нажатия
-                      00225         ; ИЗНАЧАЛЬНО не горит (если не было присланных данных
+0045   0008           00231                 return
+                      00232         ;       btfsc UART_CON, SEG7_Display_F
+                      00233         ;               return ; Если вывод на 7-сегментник
+                      00234         ;               ; Если Чтение с RX
+                      00235 
+0046                  00236 SB0_SEND_HNDL
+                      00237         ; 4 нажатия
+                      00238         ; ИЗНАЧАЛЬНО не горит (если не было присланных данных
                             ) и не ждёт данные никакие
-                      00226         ; 1(00) - активирует считывание адреса (пользователь на�
+                      00239         ; 1(00) - активирует считывание адреса (пользователь на�
                             �имает на кнопку INC для изменения адреса отправителя)
-003F   1820           00227         btfsc UART_CON, BUSY_F
-0040   2???           00228                         GOTO SB0_ifBusy; Если по какой-то причине UART занят - 
+0046   1820           00240         btfsc UART_CON, BUSY_F
+0047   2???           00241                         GOTO SB0_ifBusy; Если по какой-то причине UART занят - 
                             или обработка входящего потока, либо уже обработка о
-0041   2???           00229                         GOTO SB0_OK; 
+0048   2???           00242                         GOTO SB0_OK; 
 Warning[207]: Found label after column 1. (SB0_ifBusy)
-0042                  00230                 SB0_ifBusy
-0042   1283           00231                         banksel STATUS
-0043   082E           00232                 movf ButtonModes, w
-0044   1D03           00233                 btfss STATUS, Z
-0045   0009           00234                         retfie 
-0046   2???           00235                         GOTO Fix_addr ; Если Z = 1
-                      00236                         ; ВХОДЯЩЕЕ СООБЩЕНИЕ ОБРЫВАЕТ ВВОД ДАННЫХ    
+0049                  00243                 SB0_ifBusy
+0049   1283           00244                         banksel STATUS
+004A   082E           00245                 movf ButtonModes, w
+004B   1903           00246                 btfsc STATUS, Z
+004C   0008           00247                         return 
+004D   1CA0           00248                         btfss UART_CON, TR_F
+004E   2???           00249                                 GOTO Fix_addr ; Если Z = 1
+004F   2???           00250                                 GOTO Send_to_TX
+                      00251                         ; ВХОДЯЩЕЕ СООБЩЕНИЕ ОБРЫВАЕТ ВВОД ДАННЫХ    
 Warning[207]: Found label after column 1. (SB0_OK)
-0047                  00237         SB0_OK
-0047   1283           00238                 banksel STATUS
-0048   082E           00239                 movf ButtonModes, w
-0049   1903           00240                 btfsc STATUS, Z
-004A   2???           00241                         GOTO Fix_addr ; Если Z = 1
-                      00242 
-004B   142E           00243                         bsf ButtonModes, SB0_M0  ;  Если Z = 0
-004C   1620           00244                         bsf UART_CON, DATA_INC_F ; Разрешаем чтение данных с SB_IN
+0050                  00252         SB0_OK
+0050   1283           00253                 banksel STATUS
+0051   082E           00254                 movf ButtonModes, w
+0052   1D03           00255                 btfss STATUS, Z
+0053   2???           00256                         GOTO Fix_addr ; Если Z = 0
+                      00257 
+0054   142E           00258                         bsf ButtonModes, SB0_M0  ;  Если Z = 0
+0055   1620           00259                         bsf UART_CON, DATA_INC_F ; Разрешаем чтение данных с SB_IN
                             C
-004D   30FF           00245                         movlw 0FFh
-004E   00AF           00246                         movwf SEV_SEGM_reg
-004F   0009           00247                         retfie ; TODO
-                      00248 
+0056   30FF           00260                         movlw 0FFh
+0057   00AF           00261                         movwf SEV_SEGM_reg
+0058   1420           00262                         bsf UART_CON, BUSY_F
+0059   1683           00263                         banksel TRISIO
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+MPASM 5.76                          MAIN.ASM   12-3-2021  1:00:29         PAGE  7
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+005A   1485           00264                         bsf TRISIO, TX
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+005B   1285           00265                         bcf TRISIO, RX
+005C   1683           00266                         banksel IOCB
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+005D   1496           00267                         bsf IOCB, TX
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+005E   1296           00268                         bcf IOCB, RX                    
+                      00269                         ;CALL SB1_INC_HNDL
+005F   0008           00270                         return ; TODO
+                      00271 
 Warning[207]: Found label after column 1. (Fix_addr)
-0050                  00249         Fix_addr ; 2 (01) - фиксируется данный адрес. Переходит к счи
+0060                  00272         Fix_addr ; 2 (01) - фиксируется данный адрес. Переходит к счи
                             тыванию данных отправляемых
-0050   18AE           00250                 btfsc ButtonModes, SB0_M1
-0051   2???           00251                         GOTO Fix_data_TX
-                      00252                                 
-0052   082F           00253                         movf SEV_SEGM_reg, w
-0053   00AC           00254                         movwf ADDR_reg
-0054   30FF           00255                         movlw 0FFh
-0055   00AF           00256                         movwf SEV_SEGM_reg
-0056   0009           00257                         retfie
-                      00258 
+0060   18AE           00273                 btfsc ButtonModes, SB0_M1
+0061   2???           00274                         GOTO Fix_data_TX
+                      00275                                 
+0062   082F           00276                         movf SEV_SEGM_reg, w
+0063   00AC           00277                         movwf ADDR_reg
+0064   30FF           00278                         movlw 0FFh
+0065   00AF           00279                         movwf SEV_SEGM_reg
+0066   102E           00280                         bcf ButtonModes, SB0_M0  ;  Если Z = 0
+0067   14AE           00281                         bsf ButtonModes, SB0_M1  ;  Если Z = 0
+0068   2???           00282                         CALL SB1_INC_HNDL
+0069   0008           00283                         return
+                      00284 
 Warning[207]: Found label after column 1. (Fix_data_TX)
-0057                  00259         Fix_data_TX  ; 3 (10) - фиксируются отправляемые данные И отпр
+006A                  00285         Fix_data_TX  ; 3 (10) - фиксируются отправляемые данные И отпр
                             авка данных и адреса
-0057   1CAE           00260                 btfss ButtonModes, SB0_M1
-0058   0009           00261                         retfie
-                      00262 
-0059   082F           00263                         movf SEV_SEGM_reg, w
-005A   00AD           00264                         movwf DATA_reg
-MPASM 5.76                          MAIN.ASM   12-2-2021  15:15:54         PAGE  7
+006A   1CAE           00286                 btfss ButtonModes, SB0_M1
+006B   0008           00287                         return                                  ; WTF (TODO)
+006C   182E           00288                         btfsc ButtonModes, SB0_M0
+006D   2???           00289                                 GOTO Send_to_TX         ; мб не так надо?? (TODO)
+006E   082F           00290                         movf SEV_SEGM_reg, w
+006F   00AD           00291                         movwf DATA_reg
+0070   142E           00292                         bsf ButtonModes, SB0_M0
+0071   14A0           00293                         bsf UART_CON, TR_F
+0072   1683           00294                         banksel IOCB
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0073   1096           00295                         bcf IOCB, TX
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0074   1296           00296                         bcf IOCB, RX
+0075   0008           00297                         return
+                      00298         
+Warning[207]: Found label after column 1. (Send_to_TX)
+0076                  00299         Send_to_TX
+                      00300                         ;bcf UART_CON, TX
+0076   2???           00301                         CALL TRSF_HNDL
+0077   01A0           00302                         clrf UART_CON 
+0078   17A0           00303                         bsf UART_CON, BanReceiveZ9Bit_F                                 ; TODO (ПРАВ
+                            ИЛЬНО ЛИ???)
+0079   01AE           00304                         clrf ButtonModes
+007A   1683           00305                         banksel TRISIO
+MPASM 5.76                          MAIN.ASM   12-3-2021  1:00:29         PAGE  8
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
   VALUE
 
-005B   2???           00265                         CALL TRSF_HNDL
-                      00266                         ;clrf SEV_SEGM_reg
-005C   0009           00267                         retfie
-                      00268         
-005D                  00269 Select_Display_Info
-005D   1283           00270         banksel STATUS
-Warning[207]: Found label after column 1. (If_0_on7segm)
-005E                  00271         If_0_on7segm
-005E   3000           00272                 movlw 00h
-005F   062F           00273                 xorwf SEV_SEGM_reg, w
-0060   1903           00274                 btfsc STATUS, Z
-0061   2???           00275                         GOTO If_1_on7segm; Не совпало с "0"
-0062   30FC           00276                         movlw b'11111100'
-0063   00A7           00277                         movwf Lcd_data
-0064   0008           00278                         return
-                      00279 
-Warning[207]: Found label after column 1. (If_1_on7segm)
-0065                  00280         If_1_on7segm
-0065   3001           00281                 movlw 01h
-0066   062F           00282                 xorwf SEV_SEGM_reg, w
-0067   1903           00283                 btfsc STATUS, Z
-0068   2???           00284                         GOTO If_2_on7segm; Не совпало с "1"
-0069   3060           00285                         movlw b'01100000'
-006A   00A7           00286                         movwf Lcd_data
-006B   0008           00287                         return
-                      00288 
-Warning[207]: Found label after column 1. (If_2_on7segm)
-006C                  00289         If_2_on7segm
-006C   3002           00290                 movlw 02h
-006D   062F           00291                 xorwf SEV_SEGM_reg, w
-006E   1903           00292                 btfsc STATUS, Z
-006F   2???           00293                         GOTO If_3_on7segm; Не совпало с "2"
-0070   30DA           00294                         movlw b'11011010'
-0071   00A7           00295                         movwf Lcd_data
-0072   0008           00296                         return
-                      00297 
-Warning[207]: Found label after column 1. (If_3_on7segm)
-0073                  00298         If_3_on7segm
-0073   3003           00299                 movlw 03h
-0074   062F           00300                 xorwf SEV_SEGM_reg, w
-0075   1903           00301                 btfsc STATUS, Z
-0076   2???           00302                         GOTO If_4_on7segm; Не совпало с "3"
-0077   30F2           00303                         movlw b'11110010'
-0078   00A7           00304                         movwf Lcd_data
-0079   0008           00305                         return
-                      00306 
-Warning[207]: Found label after column 1. (If_4_on7segm)
-007A                  00307         If_4_on7segm
-007A   3004           00308                 movlw 04h
-007B   062F           00309                 xorwf SEV_SEGM_reg, w
-007C   1903           00310                 btfsc STATUS, Z
-007D   2???           00311                         GOTO If_5_on7segm; Не совпало с "4"
-007E   3066           00312                         movlw b'01100110'
-MPASM 5.76                          MAIN.ASM   12-2-2021  15:15:54         PAGE  8
-
-
-LOC  OBJECT CODE     LINE SOURCE TEXT
-  VALUE
-
-007F   00A7           00313                         movwf Lcd_data
+007B   3029           00306                         movlw TRISIO_INT
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+007C   0085           00307                         movwf TRISIO
+007D   1683           00308                         banksel IOCB
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+007E   1096           00309                         bcf IOCB, TX
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+007F   1696           00310                         bsf IOCB, RX
+                      00311                         ;clrf SEV_SEGM_reg
+                      00312 
+                      00313 
 0080   0008           00314                         return
-                      00315 
+                      00315         
+0081                  00316 Select_Display_Info
+0081   1283           00317         banksel STATUS
+Warning[207]: Found label after column 1. (If_0_on7segm)
+0082                  00318         If_0_on7segm
+0082   3000           00319                 movlw 00h
+0083   062F           00320                 xorwf SEV_SEGM_reg, w
+0084   1D03           00321                 btfss STATUS, Z
+0085   2???           00322                         GOTO If_1_on7segm; Не совпало с "0"
+0086   30FC           00323                         movlw b'11111100'
+0087   00A7           00324                         movwf Lcd_data
+0088   0008           00325                         return
+                      00326 
+Warning[207]: Found label after column 1. (If_1_on7segm)
+0089                  00327         If_1_on7segm
+0089   3001           00328                 movlw 01h
+008A   062F           00329                 xorwf SEV_SEGM_reg, w
+008B   1D03           00330                 btfss STATUS, Z
+008C   2???           00331                         GOTO If_2_on7segm; Не совпало с "1"
+008D   3060           00332                         movlw b'01100000'
+008E   00A7           00333                         movwf Lcd_data
+008F   0008           00334                         return
+                      00335 
+Warning[207]: Found label after column 1. (If_2_on7segm)
+0090                  00336         If_2_on7segm
+0090   3002           00337                 movlw 02h
+0091   062F           00338                 xorwf SEV_SEGM_reg, w
+0092   1D03           00339                 btfss STATUS, Z
+0093   2???           00340                         GOTO If_3_on7segm; Не совпало с "2"
+0094   30DA           00341                         movlw b'11011010'
+0095   00A7           00342                         movwf Lcd_data
+0096   0008           00343                         return
+                      00344 
+Warning[207]: Found label after column 1. (If_3_on7segm)
+0097                  00345         If_3_on7segm
+0097   3003           00346                 movlw 03h
+0098   062F           00347                 xorwf SEV_SEGM_reg, w
+0099   1D03           00348                 btfss STATUS, Z
+009A   2???           00349                         GOTO If_4_on7segm; Не совпало с "3"
+009B   30F2           00350                         movlw b'11110010'
+009C   00A7           00351                         movwf Lcd_data
+MPASM 5.76                          MAIN.ASM   12-3-2021  1:00:29         PAGE  9
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+009D   0008           00352                         return
+                      00353 
+Warning[207]: Found label after column 1. (If_4_on7segm)
+009E                  00354         If_4_on7segm
+009E   3004           00355                 movlw 04h
+009F   062F           00356                 xorwf SEV_SEGM_reg, w
+00A0   1D03           00357                 btfss STATUS, Z
+00A1   2???           00358                         GOTO If_5_on7segm; Не совпало с "4"
+00A2   3066           00359                         movlw b'01100110'
+00A3   00A7           00360                         movwf Lcd_data
+00A4   0008           00361                         return
+                      00362 
 Warning[207]: Found label after column 1. (If_5_on7segm)
-0081                  00316         If_5_on7segm
-0081   3005           00317                 movlw 05h
-0082   062F           00318                 xorwf SEV_SEGM_reg, w
-0083   1903           00319                 btfsc STATUS, Z
-0084   2???           00320                         GOTO If_6_on7segm; Не совпало с "5"
-0085   30B6           00321                         movlw b'10110110'
-0086   00A7           00322                         movwf Lcd_data
-0087   0008           00323                         return
-                      00324 
+00A5                  00363         If_5_on7segm
+00A5   3005           00364                 movlw 05h
+00A6   062F           00365                 xorwf SEV_SEGM_reg, w
+00A7   1D03           00366                 btfss STATUS, Z
+00A8   2???           00367                         GOTO If_6_on7segm; Не совпало с "5"
+00A9   30B6           00368                         movlw b'10110110'
+00AA   00A7           00369                         movwf Lcd_data
+00AB   0008           00370                         return
+                      00371 
 Warning[207]: Found label after column 1. (If_6_on7segm)
-0088                  00325         If_6_on7segm
-0088   3006           00326                 movlw 06h
-0089   062F           00327                 xorwf SEV_SEGM_reg, w
-008A   1903           00328                 btfsc STATUS, Z
-008B   2???           00329                         GOTO If_7_on7segm; Не совпало с "6"
-008C   30BE           00330                         movlw b'10111110'
-008D   00A7           00331                         movwf Lcd_data
-008E   0008           00332                         return
-                      00333 
+00AC                  00372         If_6_on7segm
+00AC   3006           00373                 movlw 06h
+00AD   062F           00374                 xorwf SEV_SEGM_reg, w
+00AE   1D03           00375                 btfss STATUS, Z
+00AF   2???           00376                         GOTO If_7_on7segm; Не совпало с "6"
+00B0   30BE           00377                         movlw b'10111110'
+00B1   00A7           00378                         movwf Lcd_data
+00B2   0008           00379                         return
+                      00380 
 Warning[207]: Found label after column 1. (If_7_on7segm)
-008F                  00334         If_7_on7segm
-008F   3007           00335                 movlw 07h
-0090   062F           00336                 xorwf SEV_SEGM_reg, w
-0091   1903           00337                 btfsc STATUS, Z
-0092   2???           00338                         GOTO If_8_on7segm; Не совпало с "7"
-0093   30E0           00339                         movlw b'11100000'
-0094   00A7           00340                         movwf Lcd_data
-0095   0008           00341                         return
-                      00342                         
+00B3                  00381         If_7_on7segm
+00B3   3007           00382                 movlw 07h
+00B4   062F           00383                 xorwf SEV_SEGM_reg, w
+00B5   1D03           00384                 btfss STATUS, Z
+00B6   2???           00385                         GOTO If_8_on7segm; Не совпало с "7"
+00B7   30E0           00386                         movlw b'11100000'
+00B8   00A7           00387                         movwf Lcd_data
+00B9   0008           00388                         return
+                      00389                         
 Warning[207]: Found label after column 1. (If_8_on7segm)
-0096                  00343         If_8_on7segm
-0096   3008           00344                 movlw 08h
-0097   062F           00345                 xorwf SEV_SEGM_reg, w
-0098   1903           00346                 btfsc STATUS, Z
-0099   2???           00347                         GOTO If_9_on7segm; Не совпало с "8"
-009A   30FE           00348                         movlw b'11111110'
-009B   00A7           00349                         movwf Lcd_data
-009C   0008           00350                         return
-                      00351 
+00BA                  00390         If_8_on7segm
+00BA   3008           00391                 movlw 08h
+00BB   062F           00392                 xorwf SEV_SEGM_reg, w
+00BC   1D03           00393                 btfss STATUS, Z
+00BD   2???           00394                         GOTO If_9_on7segm; Не совпало с "8"
+00BE   30FE           00395                         movlw b'11111110'
+00BF   00A7           00396                         movwf Lcd_data
+00C0   0008           00397                         return
+                      00398 
 Warning[207]: Found label after column 1. (If_9_on7segm)
-009D                  00352         If_9_on7segm
-009D   3009           00353                 movlw 09h
-009E   062F           00354                 xorwf SEV_SEGM_reg, w
-009F   1903           00355                 btfsc STATUS, Z
-00A0   2???           00356                         GOTO If_ERR; Не совпало с "9"
-00A1   30F6           00357                         movlw b'11110110'
-00A2   00A7           00358                         movwf Lcd_data
-00A3   0008           00359                         return
-                      00360         
-MPASM 5.76                          MAIN.ASM   12-2-2021  15:15:54         PAGE  9
+MPASM 5.76                          MAIN.ASM   12-3-2021  1:00:29         PAGE 10
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
   VALUE
 
+00C1                  00399         If_9_on7segm
+00C1   3009           00400                 movlw 09h
+00C2   062F           00401                 xorwf SEV_SEGM_reg, w
+00C3   1D03           00402                 btfss STATUS, Z
+00C4   2???           00403                         GOTO If_ERR; Не совпало с "9"
+00C5   30F6           00404                         movlw b'11110110'
+00C6   00A7           00405                         movwf Lcd_data
+00C7   0008           00406                         return
+                      00407         
 Warning[207]: Found label after column 1. (If_ERR)
-00A4                  00361         If_ERR
-00A4   3002           00362                 movlw b'00000010'
-00A5   00A7           00363                 movwf Lcd_data
-00A6   0008           00364                 return
-                      00365 
-                      00366 
-                      00367 
-00A7                  00368 Disp_Info_7seg
-00A7   1283           00369         banksel GPIO
-00A8   3009           00370         movlw .9
-00A9   00A8           00371         movwf Loop_ident
-Warning[207]: Found label after column 1. (Loop_Disp_bits)
-00AA                  00372         Loop_Disp_bits
-Message[305]: Using default destination of 1 (file).
-00AA   0BA8           00373                 decfsz Loop_ident
-00AB   2???           00374                         GOTO Fill_LCD_bit
-00AC   2???           00375                         GOTO Shift_reg
-Warning[207]: Found label after column 1. (Fill_LCD_bit)
-00AD                  00376                         Fill_LCD_bit
-00AD   1C27           00377                                 btfss Lcd_data, 00h
-00AE   2???           00378                                         GOTO Conf_0bit
-00AF   1285           00379                                                 bcf GPIO, GPIO5
-00B0   2???           00380                                                 GOTO Transfer_bit_to_7seg
-                      00381                                         
-Warning[207]: Found label after column 1. (Conf_0bit)
-00B1                  00382                                         Conf_0bit
-00B1   1685           00383                                                 bsf GPIO, GPIO5
-                      00384 
-Warning[207]: Found label after column 1. (Transfer_bit_to_7seg)
-00B2                  00385                                         Transfer_bit_to_7seg
-00B2   1205           00386                                                 bcf GPIO, GPIO4
-00B3   1605           00387                                                 bsf GPIO, GPIO4
-00B4   1205           00388                                                 bcf GPIO, GPIO4
-00B5   0CA7           00389                                                 rrf Lcd_data, f
-00B6   2???           00390                                                 GOTO Loop_Disp_bits
-                      00391                         
-Warning[207]: Found label after column 1. (Shift_reg)
-00B7                  00392                         Shift_reg
-00B7   1505           00393                                 bsf GPIO, GPIO2
-00B8   1105           00394                                 bcf GPIO, GPIO2
-00B9   0008           00395                                 return
-                      00396 
-00BA                  00397 SB1_INC_HNDL
-00BA   1C20           00398         btfss UART_CON, BUSY_F
-00BB   0009           00399                 retfie ; Если не занят - нах надо что-то инкрементиро
-                            вать? Делать нехрен??
-                      00400                 
-Message[305]: Using default destination of 1 (file).
-00BC   0AAF           00401                 incf SEV_SEGM_reg
-00BD   2???           00402                 CALL Select_Display_Info
-00BE   2???           00403                 CALL Disp_Info_7seg
-                      00404                 ; TODO НАДО менять какие-то ФЛАГИ 100%
-MPASM 5.76                          MAIN.ASM   12-2-2021  15:15:54         PAGE 10
-
-
-LOC  OBJECT CODE     LINE SOURCE TEXT
-  VALUE
-
-00BF   0009           00405                 retfie 
-                      00406 
-                      00407 
-                      00408 
-                      00409 
-                      00410 
-                      00411 
-                      00412 
-                      00413 
+00C8                  00408         If_ERR
+00C8   3002           00409                 movlw b'00000010'
+00C9   00A7           00410                 movwf Lcd_data
+00CA   30FF           00411                 movlw 0FFh
+00CB   00AF           00412                 movwf SEV_SEGM_reg
+00CC   0008           00413                 return
                       00414 
                       00415 
-                      00416         
-00C0                  00417 GPIO_INT
-00C0   1C20           00418         btfss UART_CON, BUSY_F
-00C1   0009           00419                 retfie   ; TODO Мб ЭТО НЕПРАВИЛЬНО
-                      00420         ; Если UART работает, то проверим дальше что было нажат�
-                            � (по режиму UART)
-00C2   2???           00421         CALL FindPortDiff
-00C3   1920           00422         btfsc UART_CON, RD_F; Если установился флаг RD_F по прерыванию, �
+                      00416 
+00CD                  00417 Disp_Info_7seg
+00CD   1283           00418         banksel GPIO
+00CE   3009           00419         movlw .9
+00CF   00A8           00420         movwf Loop_ident
+Warning[207]: Found label after column 1. (Loop_Disp_bits)
+00D0                  00421         Loop_Disp_bits
+Message[305]: Using default destination of 1 (file).
+00D0   0BA8           00422                 decfsz Loop_ident
+00D1   2???           00423                         GOTO Fill_LCD_bit
+00D2   2???           00424                         GOTO Shift_reg
+Warning[207]: Found label after column 1. (Fill_LCD_bit)
+00D3                  00425                         Fill_LCD_bit
+00D3   1C27           00426                                 btfss Lcd_data, 00h
+00D4   2???           00427                                         GOTO Conf_0bit
+00D5   1685           00428                                                 bsf GPIO, GPIO5
+00D6   2???           00429                                                 GOTO Transfer_bit_to_7seg
+                      00430                                         
+Warning[207]: Found label after column 1. (Conf_0bit)
+00D7                  00431                                         Conf_0bit
+00D7   1285           00432                                                 bcf GPIO, GPIO5
+                      00433 
+Warning[207]: Found label after column 1. (Transfer_bit_to_7seg)
+00D8                  00434                                         Transfer_bit_to_7seg
+00D8   1205           00435                                                 bcf GPIO, GPIO4
+00D9   1605           00436                                                 bsf GPIO, GPIO4
+00DA   1205           00437                                                 bcf GPIO, GPIO4
+00DB   0CA7           00438                                                 rrf Lcd_data, f
+00DC   2???           00439                                                 GOTO Loop_Disp_bits
+                      00440                         
+Warning[207]: Found label after column 1. (Shift_reg)
+00DD                  00441                         Shift_reg
+00DD   1505           00442                                 bsf GPIO, GPIO2
+00DE   1105           00443                                 bcf GPIO, GPIO2
+00DF   0008           00444                                 return
+MPASM 5.76                          MAIN.ASM   12-3-2021  1:00:29         PAGE 11
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00445 
+00E0                  00446 SB1_INC_HNDL
+00E0   1C20           00447         btfss UART_CON, BUSY_F
+00E1   0008           00448                 return ; Если не занят - нах надо что-то инкрементиро
+                            вать? Делать нехрен??
+Message[305]: Using default destination of 1 (file).
+00E2   0AAF           00449                 incf SEV_SEGM_reg
+Warning[207]: Found label after column 1. (InfoDispayAlg)
+00E3                  00450         InfoDispayAlg   
+00E3   2???           00451                 CALL Select_Display_Info
+00E4   2???           00452                 CALL Disp_Info_7seg
+                      00453                 ; TODO НАДО менять какие-то ФЛАГИ 100%
+00E5   0008           00454                 return 
+                      00455 
+                      00456 
+                      00457 
+                      00458 
+                      00459 
+                      00460 
+                      00461 
+                      00462 
+                      00463 
+                      00464 
+                      00465         
+00E6                  00466 GPIO_INT
+                      00467         ;btfss UART_CON, BUSY_F
+                      00468         ;       retfie   ; TODO Мб ЭТО НЕПРАВИЛЬНО
+                      00469 ;        Если UART работает, то проверим дальше что было нажато
+                             (по режиму UART)
+00E6   2???           00470         CALL FindPortDiff
+00E7   1920           00471         btfsc UART_CON, RD_F; Если установился флаг RD_F по прерыванию, �
                             �о значит пришёл start-бит ПОСЫЛКИ - и на всё остальное п
-00C4   2???           00423                 CALL GET_MSG
-00C5   18AB           00424         btfsc LastPressedBtns, SB_INC_Ch
-00C6   2???           00425                 CALL SB1_INC_HNDL; Если кнопка INC нажата
-00C7   182B           00426         btfsc LastPressedBtns, SB_SEND_Ch 
-00C8   2???           00427                 CALL SB0_SEND_HNDL; Если кнопка SEND нажата
-00C9   0009           00428         retfie  ; TODO Проверить достаточно ли этого!
-                      00429         
-                      00430         
-00CA                  00431 T0_INT  ; Скорость в 9600 бит/с
-00CA   1C20           00432         btfss UART_CON, BUSY_F ; Проверка, что UART работает сейчас (а не п
+00E8   2???           00472                 CALL GET_MSG
+00E9   18AB           00473         btfsc LastPressedBtns, SB_INC_Ch
+00EA   2???           00474                 CALL SB1_INC_HNDL; Если кнопка INC нажата
+00EB   182B           00475         btfsc LastPressedBtns, SB_SEND_Ch 
+00EC   2???           00476                 CALL SB0_SEND_HNDL; Если кнопка SEND нажата
+00ED   01AB           00477         clrf LastPressedBtns
+00EE   1283           00478         banksel GPIO
+00EF   0805           00479         movf GPIO, w
+00F0   00A5           00480         movwf LastPortState
+00F1   1283           00481         banksel INTCON
+00F2   100B           00482         bcf INTCON, GPIF
+00F3   0009           00483         retfie  ; TODO Проверить достаточно ли этого!
+                      00484         
+                      00485         
+00F4                  00486 T0_INT  ; Скорость в 9600 бит/с
+00F4   1C20           00487         btfss UART_CON, BUSY_F ; Проверка, что UART работает сейчас (а не п
                             ростаивает)
-00CB   0008           00433                 return  ; CHECK IT (ТАК КАК МОГУТ БЫТЬ ДРУГИЕ ПРИЧИНЫ РАБ
+00F5   0008           00488                 return  ; CHECK IT (ТАК КАК МОГУТ БЫТЬ ДРУГИЕ ПРИЧИНЫ РАБ
                             ОТЫ ТАЙМЕРА 0!!!!!!!!!!!!!!!!!!)
-                      00434                 
-                      00435         ;Если T0_mode  == 1, то это целый бит
-                      00436         ;Если T0_mode  == 0, то это пол бита
-00CC   19A0           00437         btfsc UART_CON, T0_MODE
-00CD   2???           00438                 GOTO T0_UPD_Baud
-00CE   2???           00439                 GOTO T0_UPD_HalfBaud
-                      00440         
+                      00489                 
+                      00490         ;Если T0_mode  == 1, то это целый бит
+MPASM 5.76                          MAIN.ASM   12-3-2021  1:00:29         PAGE 12
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00491         ;Если T0_mode  == 0, то это пол бита
+00F6   19A0           00492         btfsc UART_CON, T0_MODE
+00F7   2???           00493                 GOTO T0_UPD_Baud
+00F8   2???           00494                 GOTO T0_UPD_HalfBaud
+                      00495         
 Warning[207]: Found label after column 1. (T0_UPD_Baud)
-00CF                  00441         T0_UPD_Baud
-00CF   2???           00442                 CALL OneBaud
-00D0   0009           00443                 retfie
+00F9                  00496         T0_UPD_Baud
+00F9   2???           00497                 CALL OneBaud
+00FA   0009           00498                 retfie
 Warning[207]: Found label after column 1. (T0_UPD_HalfBaud)
-00D1                  00444         T0_UPD_HalfBaud
-00D1   2???           00445                 CALL HalfBaud
-00D2   0009           00446                 retfie
-                      00447                 
-                      00448                 
-                      00449                 
-00D3                  00450 T1_INT  
-                      00451 
-MPASM 5.76                          MAIN.ASM   12-2-2021  15:15:54         PAGE 11
+00FB                  00499         T0_UPD_HalfBaud
+00FB   2???           00500                 CALL HalfBaud
+00FC   0009           00501                 retfie
+                      00502                 
+                      00503                 
+                      00504                 
+00FD                  00505 T1_INT  
+00FD   1F20           00506         btfss UART_CON, SEG7_Display_F
+00FE   2???           00507                 GOTO SmthNotOKWithTMR1 ; Если флаг почему-то не стоит (TODO)
+                      00508         
+00FF   1283           00509                 banksel STATUS
+Warning[207]: Found label after column 1. (If_Disp_A)
+0100                  00510                 If_Disp_A
+0100   3000           00511                         movlw .0
+0101   0630           00512                         xorwf GotMsgDispMode, w
+0102   1D03           00513                         btfss STATUS, Z
+0103   2???           00514                                 GOTO If_Disp_dash
+0104   30EE           00515                                 movlw b'11101110'
+0105   00A7           00516                                 movwf Lcd_data
+0106   2???           00517                                 CALL Disp_Info_7seg
+0107   2???           00518                                 GOTO UpdateTMR1
+                      00519 
+Warning[207]: Found label after column 1. (If_Disp_dash)
+0108                  00520                 If_Disp_dash
+0108   3001           00521                         movlw .1
+0109   0630           00522                         xorwf GotMsgDispMode, w
+010A   1D03           00523                         btfss STATUS, Z
+010B   2???           00524                                 GOTO If_Disp_GotAddr
+Warning[207]: Found label after column 1. (Disp_dash)
+010C                  00525                         Disp_dash
+010C   3002           00526                                 movlw b'00000010'
+010D   00A7           00527                                 movwf Lcd_data
+010E   2???           00528                                 CALL Disp_Info_7seg
+010F   2???           00529                                 GOTO UpdateTMR1
+                      00530                 
+Warning[207]: Found label after column 1. (If_Disp_GotAddr)
+0110                  00531                 If_Disp_GotAddr
+0110   3002           00532                         movlw .2
+0111   0630           00533                         xorwf GotMsgDispMode, w
+0112   1D03           00534                         btfss STATUS, Z
+0113   2???           00535                                 GOTO If_Disp_D
+0114   082C           00536                                 movf ADDR_reg, w
+0115   00AF           00537                                 movwf SEV_SEGM_reg
+MPASM 5.76                          MAIN.ASM   12-3-2021  1:00:29         PAGE 13
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
   VALUE
 
-                      00452 
-00D3                  00453 TRSF_HNDL
-                      00454         ; Вызывается, если режим отправки сообщений, UART свобо
+0116   2???           00538                                 CALL InfoDispayAlg
+0117   2???           00539                                 GOTO UpdateTMR1
+                      00540 
+Warning[207]: Found label after column 1. (If_Disp_D)
+0118                  00541                 If_Disp_D
+0118   3003           00542                         movlw .3
+0119   0630           00543                         xorwf GotMsgDispMode, w
+011A   1D03           00544                         btfss STATUS, Z
+011B   2???           00545                                 GOTO If_DispSecondDash
+011C   3002           00546                                 movlw b'00000010'
+011D   00A7           00547                                 movwf Lcd_data
+011E   2???           00548                                 CALL Disp_Info_7seg
+011F   2???           00549                                 GOTO UpdateTMR1
+                      00550                 
+Warning[207]: Found label after column 1. (If_DispSecondDash)
+0120                  00551                 If_DispSecondDash
+0120   3004           00552                         movlw .4
+0121   0630           00553                         xorwf GotMsgDispMode, w
+0122   1D03           00554                         btfss STATUS, Z
+0123   2???           00555                                 GOTO If_Disp_GotData
+0124   2???           00556                                 GOTO Disp_dash
+                      00557 
+Warning[207]: Found label after column 1. (If_Disp_GotData)
+0125                  00558                 If_Disp_GotData
+0125   3005           00559                         movlw .5
+0126   0630           00560                         xorwf GotMsgDispMode, w
+0127   1D03           00561                         btfss STATUS, Z
+0128   2???           00562                                 GOTO SmthNotOKWithTMR1
+                      00563                                 
+0129   082D           00564                                 movf DATA_reg, w
+012A   00AF           00565                                 movwf SEV_SEGM_reg
+012B   2???           00566                                 CALL InfoDispayAlg
+012C   01B0           00567                                 clrf GotMsgDispMode
+012D   2???           00568                                 GOTO UpdateTMR1
+                      00569 
+Warning[207]: Found label after column 1. (UpdateTMR1)
+012E                  00570         UpdateTMR1
+012E   1283           00571                 banksel TMR1L
+012F   018E           00572                 clrf TMR1L
+0130   018F           00573                 clrf TMR1H
+0131   1283           00574                 banksel PIR1
+Warning[207]: Found label after column 1. (SmthNotOKWithTMR1)
+0132                  00575         SmthNotOKWithTMR1
+0132   100C           00576                 bcf PIR1, TMR1IF
+0133   0009           00577                 retfie
+                      00578 
+0134                  00579 TRSF_HNDL
+                      00580         ; Вызывается, если режим отправки сообщений, UART свобо
                             ден и была нажата кнопка SB0_SEND, для инициализации отп�
-                      00455         ; Сначала выбирается адрес отправителя. Для этого вы�
+                      00581         ; Сначала выбирается адрес отправителя. Для этого вы�
                             �ывается функция постоянного обновления 
-00D3   1620           00456         bsf UART_CON, DATA_INC_F 
-00D4   13A0           00457         bcf UART_CON, SaveDataOrAddr
-Warning[207]: Found label after column 1. (Wait_7segment_adr)
-00D5                  00458         Wait_7segment_adr
-00D5   1A20           00459                 btfsc UART_CON, DATA_INC_F 
-00D6   2???           00460                 GOTO Wait_7segment_adr
-                      00461                 ; Если адрес/был выбран (нажимается кнопка SB_SEND - �
-                            �аким образом фиксируется адрес)
-00D7   2???           00462         CALL SEND_MSG   ; Далее отправляется данный бит в TX
-                      00463         ; Далее снова режим выбора данных отправляемых
-                      00464         ; По нажатию SB_SEND фиксируются данные 
-Warning[207]: Found label after column 1. (Wait_7segment_data)
-00D8                  00465         Wait_7segment_data
-00D8   1A20           00466                 btfsc UART_CON, DATA_INC_F 
-00D9   2???           00467                 GOTO Wait_7segment_data
-00DA   2???           00468         CALL SEND_MSG
-                      00469         ; Отправка данных в TX
-                      00470         ; Сброс режимов работы в изначальное состояние. Ждём 
+0134   1683           00582         banksel TRISIO
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+MPASM 5.76                          MAIN.ASM   12-3-2021  1:00:29         PAGE 14
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0135   1085           00583         bcf TRISIO, TX
+                      00584         
+                      00585         
+0136   082C           00586         movf ADDR_reg, w
+0137   00A9           00587         movwf SERBUF
+0138   16A0           00588         bsf UART_CON, BIT9
+0139   2???           00589         CALL SEND_MSG   ; Далее отправляется данный бит в TX
+                      00590         ; Далее снова режим выбора данных отправляемых
+                      00591         ; По нажатию SB_SEND фиксируются данные 
+                      00592         
+                      00593         ; WAIT мб нужен!!!!!!!  TODO
+                      00594 
+013A   082D           00595         movf DATA_reg, w
+013B   00A9           00596         movwf SERBUF
+013C   2???           00597         CALL SEND_MSG
+                      00598         ; Отправка данных в TX
+                      00599         ; Сброс режимов работы в изначальное состояние. Ждём 
                             или нажатия кнопки SB_SEND, или прихода пакета.
-                      00471         
-                      00472         
-00DB                  00473 HalfBaud
-00DB   30CC           00474         movlw .204
-00DC   1283           00475         banksel TMR0
-00DD   0081           00476         movwf TMR0
-00DE   168B           00477         bsf INTCON, T0IE
-00DF   1421           00478         bsf UART_t0, WAIT_HalfBaud
+                      00600         
+                      00601         
+013D                  00602 HalfBaud
+013D   30CC           00603         movlw .204
+013E   1283           00604         banksel TMR0
+013F   0081           00605         movwf TMR0
+0140   1283           00606         banksel INTCON
+0141   168B           00607         bsf INTCON, T0IE
+0142   1421           00608         bsf UART_t0, WAIT_HalfBaud
+0143   1283           00609         banksel INTCON
+0144   178B           00610         bsf INTCON, GIE         ; Разрешаем прерывания (Таймер)
+0145   130B           00611         bcf INTCON, PEIE 
 Warning[207]: Found label after column 1. (WAIT_forHalfBaud)
-00E0                  00479         WAIT_forHalfBaud
-00E0   1821           00480                 btfsc UART_t0, WAIT_HalfBaud
-00E1   2???           00481                         GOTO WAIT_forHalfBaud
-00E2   0008           00482                         return
-                      00483 
-00E3                  00484 OneBaud
-00E3   3098           00485         movlw .152
-00E4   1283           00486         banksel TMR0
-00E5   0081           00487         movwf TMR0
-00E6   168B           00488         bsf INTCON, T0IE
-00E7   14A1           00489         bsf UART_t0, WAIT_FullBaud
+0146                  00612         WAIT_forHalfBaud
+0146   1821           00613                 btfsc UART_t0, WAIT_HalfBaud
+0147   2???           00614                         GOTO WAIT_forHalfBaud
+0148   138B           00615                         bcf INTCON, GIE         ; Разрешаем прерывания (Таймер)
+0149   170B           00616                         bsf INTCON, PEIE 
+014A   0008           00617                         return
+                      00618 
+014B                  00619 OneBaud
+014B   3098           00620         movlw .152
+014C   1283           00621         banksel TMR0
+014D   0081           00622         movwf TMR0
+014E   1283           00623         banksel INTCON
+014F   168B           00624         bsf INTCON, T0IE
+0150   14A1           00625         bsf UART_t0, WAIT_FullBaud
+0151   1283           00626         banksel INTCON
+0152   178B           00627         bsf INTCON, GIE         ; Разрешаем прерывания (Таймер)
+0153   130B           00628         bcf INTCON, PEIE 
 Warning[207]: Found label after column 1. (WAIT_forFullBaud)
-00E8                  00490         WAIT_forFullBaud
-00E8   18A1           00491                 btfsc UART_t0, WAIT_FullBaud
-00E9   2???           00492                         GOTO WAIT_forFullBaud
-00EA   0008           00493                         return
-                      00494         
-00EB                  00495 GET_MSG
-00EB   3008           00496         movlw .8
-MPASM 5.76                          MAIN.ASM   12-2-2021  15:15:54         PAGE 12
+0154                  00629         WAIT_forFullBaud
+0154   18A1           00630                 btfsc UART_t0, WAIT_FullBaud
+0155   2???           00631                         GOTO WAIT_forFullBaud
+0156   138B           00632                         bcf INTCON, GIE         ; Разрешаем прерывания (Таймер)
+MPASM 5.76                          MAIN.ASM   12-3-2021  1:00:29         PAGE 15
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
   VALUE
 
-00EC   00AA           00497         movwf TEMP
-00ED   01A9           00498         clrf SERBUF
-00EE   2???           00499         CALL HalfBaud
-00EF   1283           00500         banksel GPIO
+0157   170B           00633                         bsf INTCON, PEIE 
+0158   0008           00634                         return
+                      00635         
+0159                  00636 Start_Displaying_GotMessage
+                      00637         ; Если получили сообщение (сначала адрес), потом данн�
+                            �е
+                      00638         ; Запускается таймер T1. Каждую примерно секунду буде�
+                            � отображаться то Адрес, от кого, то данные
+                      00639         ; А - # d - #
+0159   1283           00640         banksel STATUS
+015A   0830           00641         movf GotMsgDispMode, w
+015B   1D03           00642         btfss STATUS, Z
+015C   2???           00643                 GOTO OtherModes; Если НЕ режим 0
+                      00644         
+                      00645         ; Если режим 0
+015D   1283           00646         banksel TMR1L
+015E   018E           00647         clrf TMR1L
+015F   018F           00648         clrf TMR1H
+                      00649         
+0160   1683           00650         banksel PIE1
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0161   140C           00651         bsf PIE1, TMR1IE
+                      00652 
+0162   1283           00653         banksel GPIO
+0163   1285           00654         bcf GPIO, GPIO5 ; Делаем Порт 5 "Выводом"
+0164   1720           00655         bsf UART_CON, SEG7_Display_F
+                      00656 
+0165   1283           00657         banksel T1CON
+0166   1690           00658         bsf T1CON, T1CKPS1
+0167   1610           00659         bsf T1CON, T1CKPS0
+                      00660         
+0168   1410           00661         bsf T1CON, TMR1ON               ; Старт таймера
+0169   0008           00662         return
+                      00663 
+Warning[207]: Found label after column 1. (OtherModes)
+016A                  00664         OtherModes
+                      00665                 ; WHAT THE FUCK? Я сюда не должен был попадать!!
+016A   0008           00666                 return ; TODO Это что-то явно неправильное!
+                      00667 
+016B                  00668 GET_MSG
+016B   3008           00669         movlw .8
+016C   00AA           00670         movwf TEMP
+016D   01A9           00671         clrf SERBUF
+016E   2???           00672         CALL HalfBaud
+016F   1283           00673         banksel GPIO
 Warning[207]: Found label after column 1. (Recieve_data)
-00F0                  00501         Recieve_data
-00F0   2???           00502                 CALL OneBaud
-00F1   1003           00503                 bcf STATUS, C
-00F2   0CA9           00504                 rrf SERBUF , f
-00F3   1E85           00505                 btfss GPIO, RX
-00F4   17A9           00506                 bsf SERBUF, 7
-00F5   0BAA           00507                 decfsz TEMP, f
-00F6   2???           00508                 GOTO Recieve_data
-                      00509                 
-00F7   2???           00510                 CALL OneBaud
-00F8   0829           00511                 movf SERBUF, w                  ; Не знаю зачем
-00F9   3400           00512                 retlw 0
-                      00513                 
-00FA                  00514 SEND_MSG
-                      00515         ; TODO Загрузка отправляемой константы  И загрузка 9 би�
-                            �ого
-00FA   3008           00516         movlw .8
-00FB   1283           00517         banksel GPIO
-00FC   1485           00518         bsf GPIO, TX
-Warning[207]: Found label after column 1. (Send_data)
-00FD                  00519         Send_data
-00FD   0CA9           00520                 rrf SERBUF, f
-00FE   1C03           00521                 btfss STATUS, C
-00FF   2???           00522                 GOTO Transfer_0
-0100   2???           00523                 GOTO Transfer_1
-Warning[207]: Found label after column 1. (Transfer_0)
-0101                  00524                 Transfer_0
-0101   1085           00525                         bcf GPIO, TX
-0102   2???           00526                         GOTO BIT_ready
-Warning[207]: Found label after column 1. (Transfer_1)
-0103                  00527                 Transfer_1
-0103   1485           00528                         bsf GPIO, TX
-Warning[207]: Found label after column 1. (BIT_ready)
-0104                  00529                 BIT_ready
-0104   2???           00530                         CALL OneBaud
-0105   0BAA           00531                         decfsz TEMP, f
-0106   2???           00532                         GOTO Send_data
-                      00533                         
-0107   1EA0           00534                         btfss UART_CON, BIT9
-0108   2???           00535                         GOTO Send_9one
-0109   2???           00536                         GOTO Send_9zero
-Warning[207]: Found label after column 1. (Send_9one)
-010A                  00537                         Send_9one
-010A   1485           00538                                 bsf GPIO, TX
-010B   2???           00539                                 GOTO Send_Stop
-Warning[207]: Found label after column 1. (Send_9zero)
-010C                  00540                         Send_9zero
-010C   1085           00541                                 bcf GPIO, TX
-MPASM 5.76                          MAIN.ASM   12-2-2021  15:15:54         PAGE 13
+0170                  00674         Recieve_data
+0170   2???           00675                 CALL OneBaud
+0171   1003           00676                 bcf STATUS, C
+0172   0CA9           00677                 rrf SERBUF , f
+0173   1E85           00678                 btfss GPIO, RX
+0174   17A9           00679                 bsf SERBUF, 7
+0175   0BAA           00680                 decfsz TEMP, f
+MPASM 5.76                          MAIN.ASM   12-3-2021  1:00:29         PAGE 16
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
   VALUE
 
+0176   2???           00681                 GOTO Recieve_data               
+0177   2???           00682         CALL OneBaud
+                      00683         ; Читаем 9 бит
+0178   1A85           00684         btfsc GPIO, RX
+0179   2???           00685                 GOTO GetAddress; Если пришёл 9 бит == 1 (адрес)
+                      00686                 ; Если пришёл 9 бит == 0 (данные) - то ХЗ. Надо провер�
+                            �ть! 
+                      00687                 ; (9bit == 0)
+017A   1BA0           00688                 btfsc UART_CON, BanReceiveZ9Bit_F
+017B   0008           00689                         return ; ПРОПУСК ДАННОЙ ПОСЫЛКИ! (ожидали адрес 
+                            - получили данные)
+                      00690                         
+                      00691                         ; ЕСЛИ ПОЛУЧИЛИ ДАННЫЕ - И ЭТО ОК
+017C   0829           00692                         movf SERBUF, w
+017D   00AD           00693                         movwf DATA_reg
+017E   2???           00694                         CALL Start_Displaying_GotMessage
+017F   0008           00695                         return
+                      00696 
+Warning[207]: Found label after column 1. (GetAddress)
+0180                  00697         GetAddress ; (9bit == 1)
+0180   1FA0           00698                 btfss UART_CON, BanReceiveZ9Bit_F
+0181   0008           00699                         return ; ПРОПУСК ДАННОЙ ПОСЫЛКИ! (ожидали данны�
+                            � - получили адрес)
+                      00700         
+                      00701                         ; Адрес
+0182   0829           00702                         movf SERBUF, w                  ; Не знаю зачем
+0183   00AC           00703                         movwf ADDR_reg
+0184   13A0           00704                         bcf UART_CON, BanReceiveZ9Bit_F
+0185   0008           00705                         return
+                      00706                                 
+                      00707 
+                      00708 
+0186                  00709 SEND_MSG
+                      00710         ; TODO Загрузка отправляемой константы  И загрузка 9 би�
+                            �ого
+0186   3008           00711         movlw .8
+0187   1283           00712         banksel GPIO
+0188   1485           00713         bsf GPIO, TX
+Warning[207]: Found label after column 1. (Send_data)
+0189                  00714         Send_data
+0189   0CA9           00715                 rrf SERBUF, f
+018A   1283           00716                 banksel STATUS
+018B   1C03           00717                 btfss STATUS, C
+018C   2???           00718                 GOTO Transfer_0
+018D   2???           00719                 GOTO Transfer_1
+Warning[207]: Found label after column 1. (Transfer_0)
+018E                  00720                 Transfer_0
+018E   1283           00721                         banksel GPIO
+018F   1085           00722                         bcf GPIO, TX
+0190   2???           00723                         GOTO BIT_ready
+Warning[207]: Found label after column 1. (Transfer_1)
+0191                  00724                 Transfer_1
+0191   1283           00725                         banksel GPIO
+MPASM 5.76                          MAIN.ASM   12-3-2021  1:00:29         PAGE 17
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0192   1485           00726                         bsf GPIO, TX
+Warning[207]: Found label after column 1. (BIT_ready)
+0193                  00727                 BIT_ready
+0193   2???           00728                         CALL OneBaud
+0194   0BAA           00729                         decfsz TEMP, f
+0195   2???           00730                         GOTO Send_data
+                      00731                         
+0196   1EA0           00732                         btfss UART_CON, BIT9
+0197   2???           00733                         GOTO Send_9one
+0198   2???           00734                         GOTO Send_9zero
+Warning[207]: Found label after column 1. (Send_9one)
+0199                  00735                         Send_9one
+0199   1485           00736                                 bsf GPIO, TX
+019A   2???           00737                                 GOTO Send_Stop
+Warning[207]: Found label after column 1. (Send_9zero)
+019B                  00738                         Send_9zero
+019B   1085           00739                                 bcf GPIO, TX
 Warning[207]: Found label after column 1. (Send_Stop)
-010D                  00542                         Send_Stop
-010D   2???           00543                                 CALL OneBaud
-010E   0CA9           00544                                 rrf  SERBUF, f          ; TODO ЗАЧЕМ?????
-010F   1485           00545                                 bsf GPIO, TX            ; СТОП-БИТ
-0110   3400           00546                                 retlw 0
-                      00547                 
-                      00548         
-                      00549         
-                      00550 
-                      00551 
+019C                  00740                         Send_Stop
+019C   2???           00741                                 CALL OneBaud
+019D   0CA9           00742                                 rrf  SERBUF, f          ; TODO ЗАЧЕМ?????
+019E   1485           00743                                 bsf GPIO, TX            ; СТОП-БИТ
+019F   3400           00744                                 retlw 0
+                      00745                 
+                      00746         
+                      00747         
+                      00748 
+                      00749 
 Warning[205]: Found directive in column 1. (END)
-3FF4                  00552 END
-MPASM 5.76                          MAIN.ASM   12-2-2021  15:15:54         PAGE 14
+3FF4                  00750 END
+MPASM 5.76                          MAIN.ASM   12-3-2021  1:00:29         PAGE 18
 
 
 SYMBOL TABLE
@@ -749,8 +1002,9 @@ ANS3                              00000003
 ANSEL                             0000009F
 Accum                             00000026
 BIT9                              00000005
-BIT_ready                         00000104
+BIT_ready                         00000193
 BUSY_F                            00000000
+BanReceiveZ9Bit_F                 00000007
 ButtonModes                       0000002E
 C                                 00000000
 CAL0                              00000002
@@ -770,32 +1024,33 @@ CMCON                             00000019
 CMIE                              00000003
 CMIF                              00000003
 COUT                              00000006
-Check_SB_INC                      00000036
-Conf_0bit                         000000B1
+Check_SB_INC                      00000040
+Conf_0bit                         000000D7
 DATA_INC_F                        00000004
 DATA_reg                          0000002D
 DC                                00000001
-Disp_Info_7seg                    000000A7
+Disp_Info_7seg                    000000CD
+Disp_dash                         0000010C
 EEADR                             0000009B
 EECON1                            0000009C
 EECON2                            0000009D
 EEDAT                             0000009A
 EEDATA                            0000009A
 EEIE                              00000007
-EEIF                              00000007
-F                                 00000001
-MPASM 5.76                          MAIN.ASM   12-2-2021  15:15:54         PAGE 15
+MPASM 5.76                          MAIN.ASM   12-3-2021  1:00:29         PAGE 19
 
 
 SYMBOL TABLE
   LABEL                             VALUE 
 
+EEIF                              00000007
+F                                 00000001
 FSR                               00000004
-Fill_LCD_bit                      000000AD
-FindPortDiff                      0000002D
-Fix_addr                          00000050
-Fix_data_TX                       00000057
-GET_MSG                           000000EB
+Fill_LCD_bit                      000000D3
+FindPortDiff                      00000030
+Fix_addr                          00000060
+Fix_data_TX                       0000006A
+GET_MSG                           0000016B
 GIE                               00000007
 GO                                00000001
 GO_DONE                           00000001
@@ -815,10 +1070,12 @@ GPIO2                             00000002
 GPIO3                             00000003
 GPIO4                             00000004
 GPIO5                             00000005
-GPIO_DATA                         00000000
-GPIO_INT                          000000C0
-HalfBaud                          000000DB
-IINT_HNDL                         00000025
+GPIO_DATA                         00000002
+GPIO_INT                          000000E6
+GetAddress                        00000180
+GotMsgDispMode                    00000030
+HalfBaud                          0000013D
+IINT_HNDL                         00000028
 INDF                              00000000
 INTCON                            0000000B
 INTE                              00000004
@@ -839,32 +1096,39 @@ IOCB2                             00000002
 IOCB3                             00000003
 IOCB4                             00000004
 IOCB5                             00000005
-IOC_INIT                          00000003
-IRP                               00000007
-If_0_on7segm                      0000005E
-If_1_on7segm                      00000065
-MPASM 5.76                          MAIN.ASM   12-2-2021  15:15:54         PAGE 16
+MPASM 5.76                          MAIN.ASM   12-3-2021  1:00:29         PAGE 20
 
 
 SYMBOL TABLE
   LABEL                             VALUE 
 
-If_2_on7segm                      0000006C
-If_3_on7segm                      00000073
-If_4_on7segm                      0000007A
-If_5_on7segm                      00000081
-If_6_on7segm                      00000088
-If_7_on7segm                      0000008F
-If_8_on7segm                      00000096
-If_9_on7segm                      0000009D
-If_ERR                            000000A4
+IOC_INIT                          00000021
+IRP                               00000007
+If_0_on7segm                      00000082
+If_1_on7segm                      00000089
+If_2_on7segm                      00000090
+If_3_on7segm                      00000097
+If_4_on7segm                      0000009E
+If_5_on7segm                      000000A5
+If_6_on7segm                      000000AC
+If_7_on7segm                      000000B3
+If_8_on7segm                      000000BA
+If_9_on7segm                      000000C1
+If_DispSecondDash                 00000120
+If_Disp_A                         00000100
+If_Disp_D                         00000118
+If_Disp_GotAddr                   00000110
+If_Disp_GotData                   00000125
+If_Disp_dash                      00000108
+If_ERR                            000000C8
+InfoDispayAlg                     000000E3
 Init                              00000000
 LastPortState                     00000025
 LastPressedBtns                   0000002B
 Lcd_data                          00000027
-Loop_Disp_bits                    000000AA
+Loop_Disp_bits                    000000D0
 Loop_ident                        00000028
-MainLoop                          00000024
+MainLoop                          00000027
 NOT_BOD                           00000000
 NOT_BOR                           00000000
 NOT_DONE                          00000001
@@ -875,7 +1139,8 @@ NOT_T1SYNC                        00000002
 NOT_TO                            00000004
 OPTION_REG                        00000081
 OSCCAL                            00000090
-OneBaud                           000000E3
+OneBaud                           0000014B
+OtherModes                        0000016A
 PCL                               00000002
 PCLATH                            0000000A
 PCON                              0000008E
@@ -887,51 +1152,53 @@ PS0                               00000000
 PS1                               00000001
 PS2                               00000002
 PSA                               00000003
-Port_GP0                          0000002E
-Port_GP1                          00000033
-Port_GP5                          0000003B
-RD                                00000000
-RD_F                              00000002
-RP0                               00000005
-RP1                               00000006
-RX                                00000005
-Recieve_data                      000000F0
-SB0_M0                            00000000
-SB0_M1                            00000001
-SB0_OK                            00000047
-SB0_SEND_HNDL                     0000003F
-SB0_ifBusy                        00000042
-SB1_INC_HNDL                      000000BA
-MPASM 5.76                          MAIN.ASM   12-2-2021  15:15:54         PAGE 17
+Port_GP0                          00000030
+Port_GP1                          00000039
+Port_GP5                          00000045
+MPASM 5.76                          MAIN.ASM   12-3-2021  1:00:29         PAGE 21
 
 
 SYMBOL TABLE
   LABEL                             VALUE 
 
+RD                                00000000
+RD_F                              00000002
+RP0                               00000005
+RP1                               00000006
+RX                                00000005
+Recieve_data                      00000170
+SB0_M0                            00000000
+SB0_M1                            00000001
+SB0_OK                            00000050
+SB0_SEND_HNDL                     00000046
+SB0_ifBusy                        00000049
+SB1_INC_HNDL                      000000E0
 SB_INC_Ch                         00000001
 SB_SEND_Ch                        00000000
 SEG7_Display_F                    00000006
-SEND_MSG                          000000FA
+SEND_MSG                          00000186
 SERBUF                            00000029
 SEV_SEGM_reg                      0000002F
-START                             00000023
+START                             00000026
 STATUS                            00000003
-SaveDataOrAddr                    00000007
-Select_Display_Info               0000005D
-Send_9one                         0000010A
-Send_9zero                        0000010C
-Send_Stop                         0000010D
-Send_data                         000000FD
-Shift_reg                         000000B7
+Select_Display_Info               00000081
+Send_9one                         00000199
+Send_9zero                        0000019B
+Send_Stop                         0000019C
+Send_data                         00000189
+Send_to_TX                        00000076
+Shift_reg                         000000DD
+SmthNotOKWithTMR1                 00000132
+Start_Displaying_GotMessage       00000159
 T02SecScaler                      00000024
 T0CS                              00000005
 T0IE                              00000005
 T0IF                              00000002
 T0SE                              00000004
-T0_INT                            000000CA
+T0_INT                            000000F4
 T0_MODE                           00000003
-T0_UPD_Baud                       000000CF
-T0_UPD_HalfBaud                   000000D1
+T0_UPD_Baud                       000000F9
+T0_UPD_HalfBaud                   000000FB
 T1CKPS0                           00000004
 T1CKPS1                           00000005
 T1CON                             00000010
@@ -941,12 +1208,18 @@ T1IE                              00000000
 T1IF                              00000000
 T1L_REG                           00000023
 T1OSCEN                           00000003
-T1_INT                            000000D3
+T1_INT                            000000FD
 TEMP                              0000002A
 TMR0                              00000001
 TMR0IE                            00000005
 TMR0IF                            00000002
 TMR0_INIT                         00000000
+MPASM 5.76                          MAIN.ASM   12-3-2021  1:00:29         PAGE 22
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
 TMR1                              0000000E
 TMR1CS                            00000001
 TMR1GE                            00000006
@@ -961,23 +1234,19 @@ TRISIO                            00000085
 TRISIO0                           00000000
 TRISIO1                           00000001
 TRISIO2                           00000002
-MPASM 5.76                          MAIN.ASM   12-2-2021  15:15:54         PAGE 18
-
-
-SYMBOL TABLE
-  LABEL                             VALUE 
-
 TRISIO3                           00000003
 TRISIO4                           00000004
 TRISIO5                           00000005
-TRSF_HNDL                         000000D3
+TRISIO_INT                        00000029
+TRSF_HNDL                         00000134
 TR_F                              00000001
 TX                                00000001
-Transfer_0                        00000101
-Transfer_1                        00000103
-Transfer_bit_to_7seg              000000B2
+Transfer_0                        0000018E
+Transfer_1                        00000191
+Transfer_bit_to_7seg              000000D8
 UART_CON                          00000020
 UART_t0                           00000021
+UpdateTMR1                        0000012E
 VCFG                              00000006
 VR0                               00000000
 VR1                               00000001
@@ -989,23 +1258,27 @@ VRR                               00000005
 W                                 00000000
 WAIT_FullBaud                     00000001
 WAIT_HalfBaud                     00000000
-WAIT_forFullBaud                  000000E8
-WAIT_forHalfBaud                  000000E0
+WAIT_forFullBaud                  00000154
+WAIT_forHalfBaud                  00000146
 WPU                               00000095
 WPU0                              00000000
 WPU1                              00000001
 WPU2                              00000002
 WPU4                              00000004
 WPU5                              00000005
-WPU_INIT                          00000034
+WPU_INIT                          00000036
 WR                                00000001
 WREN                              00000002
 WRERR                             00000003
-Wait_7segment_adr                 000000D5
-Wait_7segment_data                000000D8
 Z                                 00000002
 _BODEN_OFF                        00003FBF
 _BODEN_ON                         00003FFF
+MPASM 5.76                          MAIN.ASM   12-3-2021  1:00:29         PAGE 23
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
 _BOREN_OFF                        00003FBF
 _BOREN_ON                         00003FFF
 _CONFIG                           00002007
@@ -1020,12 +1293,6 @@ _EXTRC_OSC_NOCLKOUT               00003FFE
 _FOSC_EC                          00003FFB
 _FOSC_EXTRCCLK                    00003FFF
 _FOSC_EXTRCIO                     00003FFE
-MPASM 5.76                          MAIN.ASM   12-2-2021  15:15:54         PAGE 19
-
-
-SYMBOL TABLE
-  LABEL                             VALUE 
-
 _FOSC_HS                          00003FFA
 _FOSC_INTRCCLK                    00003FFD
 _FOSC_INTRCIO                     00003FFC
@@ -1054,7 +1321,7 @@ btn_RST                           00000003
 btn_SEND                          00000000
 
 Errors   :     0
-Warnings :    53 reported,     0 suppressed
-Messages :     8 reported,     0 suppressed
+Warnings :    64 reported,     0 suppressed
+Messages :    21 reported,     0 suppressed
 
 

@@ -17,20 +17,21 @@ __CONFIG b'11111111110100'
 ; CONSTANTS
 ;====================================================================
 
-GPIO_DATA equ b'0000000' 
+GPIO_DATA equ b'000010' 
 INTERRUPT_INIT equ b'11001000'
 PIE1_INIT equ b'00000000'
 TMR1H_INIT equ 0x0
 TMR1L_INIT equ 0x0
 TMR0_INIT equ 0x0
-WPU_INIT equ b'110100'			; GPIO1 И GPIO5 - мбб как READ так и WRITE режим. Для кнопки (изначально!) и TX; Для RX и Data соответственно.
-IOC_INIT equ b'000011'
+WPU_INIT equ b'110110'   ;b'110100'			;GPIO1 И GPIO5 - мбб как READ так и WRITE режим. Для кнопки (изначально!) и TX; Для RX и Data соответственно.
+IOC_INIT equ b'100001'
 T1CON_INIT equ b'00000000'
+TRISIO_INT equ b'00101001' ; b'00101001'
 ;====================================================================
 ; VARIABLES
 ;====================================================================
 
-UART_CON equ 20h
+UART_CON equ 20h				; ИЗНАЧАЛЬНО ДОЛЖЕН БЫТЬ РЕЖИМ ПРОСЛУШИВАНИЯ!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	BUSY_F equ 00h
 	TR_F equ 01h
 	RD_F equ 02h
@@ -38,11 +39,13 @@ UART_CON equ 20h
 	DATA_INC_F equ 04h
 	BIT9 equ 05h
 	SEG7_Display_F equ 06h
-	SaveDataOrAddr equ 07h  	; || 0 - Addr | 1 - Data ||
+	BanReceiveZ9Bit_F equ 07h;  Флаг запрета приёма сообщений,в котором 9 бит имеет значение 0 (т.е. если это ДАННЫЕ)
+	;SaveDataOrAddr equ 07h  	; || 0 - Addr | 1 - Data ||
 
 UART_t0 equ 21h
 	WAIT_HalfBaud equ 00h
 	WAIT_FullBaud equ 01h
+	Simple_TMR equ 02h
 ;LEDS_STATES equ 21h
 ;LED1 equ 00h
 ;LED2 equ 01h
@@ -96,7 +99,7 @@ ButtonModes equ 2Eh
 
 SEV_SEGM_reg equ 2Fh
 
-
+GotMsgDispMode equ 30h
 
 
 ;====================================================================
@@ -132,7 +135,7 @@ Init
     movwf GPIO
 	
 	 banksel TRISIO
-    movlw b'00001011'   ; GPIO Port options
+    movlw TRISIO_INT   ; GPIO Port options
     movwf TRISIO
 	
     banksel OPTION_REG
@@ -165,14 +168,15 @@ Init
     movlw T1CON_INIT    ; Enables timer 1
     movwf T1CON
 
-    banksel IOC
+    banksel IOCB
     movlw IOC_INIT
-    movwf IOC
+    movwf IOCB
 
 	;CALL SavePortStates
 	movf GPIO, w
 	movwf LastPortState
 	
+	bsf UART_CON, BanReceiveZ9Bit_F
 	
     return
 
@@ -191,18 +195,25 @@ IINT_HNDL
 	banksel PIR1
 	btfsc PIR1, TMR1IF
 	GOTO T1_INT
-	return
+	retfie
 	
 FindPortDiff
 	; Допустим, состояние порта записывается в регистр LastPortState
-	banksel GPIO
 	Port_GP0
+		banksel IOCB
+		btfss IOCB, GPIO0
+			GOTO Port_GP1
+		banksel GPIO
 		btfsc GPIO, btn_SEND; Если нажата кнопка - то (0)
 			GOTO Port_GP1 ; Если (1)
 			btfss LastPortState, btn_SEND; Если (0) (Если в LastPortState и был 0 - то забиваем, иначе - нажата кнопка)
 				GOTO Port_GP1; Если остаётся быть нажатой
 				bsf LastPressedBtns, SB_SEND_Ch; Если произошло на самом деле нажатие
 	Port_GP1 ; ТОЛЬКО В РЕЖИМЕ ДО отправки {TODO}
+		banksel IOCB
+		btfss IOCB, GPIO1
+			GOTO Port_GP5
+		banksel GPIO
 		btfsc UART_CON, DATA_INC_F
 			GOTO Check_SB_INC; Если 1
 			GOTO Port_GP5; Если 0
@@ -235,7 +246,9 @@ SB0_SEND_HNDL
 		movf ButtonModes, w
 		btfsc STATUS, Z
 			return 
-			GOTO Fix_addr ; Если Z = 1
+			btfss UART_CON, TR_F
+				GOTO Fix_addr ; Если Z = 1
+				GOTO Send_to_TX
 			; ВХОДЯЩЕЕ СООБЩЕНИЕ ОБРЫВАЕТ ВВОД ДАННЫХ	
 	SB0_OK
 		banksel STATUS
@@ -248,6 +261,13 @@ SB0_SEND_HNDL
 			movlw 0FFh
 			movwf SEV_SEGM_reg
 			bsf UART_CON, BUSY_F
+			banksel TRISIO
+			bcf TRISIO, RX
+			bsf TRISIO, TX
+			banksel IOCB
+			bsf IOCB, TX
+			bcf IOCB, RX			
+			;CALL SB1_INC_HNDL
 			return ; TODO
 
 	Fix_addr ; 2 (01) - фиксируется данный адрес. Переходит к считыванию данных отправляемых
@@ -260,19 +280,57 @@ SB0_SEND_HNDL
 			movwf SEV_SEGM_reg
 			bcf ButtonModes, SB0_M0  ;  Если Z = 0
 			bsf ButtonModes, SB0_M1  ;  Если Z = 0
-
+			CALL SB1_INC_HNDL
 			return
 
 	Fix_data_TX  ; 3 (10) - фиксируются отправляемые данные И отправка данных и адреса
 		btfss ButtonModes, SB0_M1
-			return
-
+			return					; WTF (TODO)
+			btfsc ButtonModes, SB0_M0
+				GOTO Send_to_TX		; мб не так надо?? (TODO)
 			movf SEV_SEGM_reg, w
 			movwf DATA_reg
+			bsf ButtonModes, SB0_M0
+			bsf UART_CON, TR_F
+			banksel IOCB
+			bcf IOCB, TX
+			bcf IOCB, RX
+			return
+	
+	Send_to_TX
+			;bcf UART_CON, TX
+			banksel IOCB
+			bcf IOCB, TX
+			bcf IOCB, RX
+			bcf IOCB, GPIO0	
+			banksel INTCON
+			bcf INTCON, GPIE
+			;bcf LastPressedBtns, SB_SEND_Ch 	; Чтобы не было лишних вызовов
+
+			banksel GPIO
+			bsf GPIO, TX
+			banksel TRISIO
+			bsf TRISIO, RX
+			bcf TRISIO, TX
+					
+			
 			CALL TRSF_HNDL
-			clrf UART_CON 					; TODO (ПРАВИЛЬНО ЛИ???)
+			
+			clrf UART_CON 
+			bsf UART_CON, BanReceiveZ9Bit_F					; TODO (ПРАВИЛЬНО ЛИ???)
 			clrf ButtonModes
+			banksel TRISIO
+			movlw TRISIO_INT
+			movwf TRISIO
+			banksel IOCB
+			bcf IOCB, TX
+			bsf IOCB, RX
+			bsf IOCB, GPIO0
+			banksel INTCON
+			bsf INTCON, GPIE
 			;clrf SEV_SEGM_reg
+
+
 			return
 	
 Select_Display_Info
@@ -408,8 +466,8 @@ Disp_Info_7seg
 SB1_INC_HNDL
 	btfss UART_CON, BUSY_F
 		return ; Если не занят - нах надо что-то инкрементировать? Делать нехрен??
-		
 		incf SEV_SEGM_reg
+	InfoDispayAlg	
 		CALL Select_Display_Info
 		CALL Disp_Info_7seg
 		; TODO НАДО менять какие-то ФЛАГИ 100%
@@ -447,66 +505,225 @@ GPIO_INT
 	
 T0_INT	; Скорость в 9600 бит/с
 	btfss UART_CON, BUSY_F ; Проверка, что UART работает сейчас (а не простаивает)
-		return	; CHECK IT (ТАК КАК МОГУТ БЫТЬ ДРУГИЕ ПРИЧИНЫ РАБОТЫ ТАЙМЕРА 0!!!!!!!!!!!!!!!!!!)
+		retfie	; CHECK IT (ТАК КАК МОГУТ БЫТЬ ДРУГИЕ ПРИЧИНЫ РАБОТЫ ТАЙМЕРА 0!!!!!!!!!!!!!!!!!!)
 		
 	;Если T0_mode  == 1, то это целый бит
 	;Если T0_mode  == 0, то это пол бита
-	btfsc UART_CON, T0_MODE
-		GOTO T0_UPD_Baud
-		GOTO T0_UPD_HalfBaud
-	
-	T0_UPD_Baud
-		CALL OneBaud
-		retfie
-	T0_UPD_HalfBaud
-		CALL HalfBaud
-		retfie
+	btfss UART_t0, Simple_TMR
+		GOTO Baud_Control
+		bcf UART_t0, Simple_TMR
+		bcf INTCON, T0IE
+		bcf INTCON, T0IF
+		return
 		
+	Baud_Control
+		banksel INTCON
+		btfsc UART_CON, T0_MODE
+			GOTO T0_UPD_Baud
+			GOTO T0_UPD_HalfBaud
+		
+		T0_UPD_Baud
+			bcf UART_t0, WAIT_FullBaud
+			
+			bcf INTCON, T0IE
+			bcf INTCON, T0IF
+			return
+		T0_UPD_HalfBaud
+			bcf UART_t0, WAIT_HalfBaud
+			bcf INTCON, T0IE
+			bcf INTCON, T0IF
+			return
+			
 		
 		
 T1_INT	
+	btfss UART_CON, SEG7_Display_F
+		GOTO SmthNotOKWithTMR1 ; Если флаг почему-то не стоит (TODO)
+	
+		banksel STATUS
+		If_Disp_A
+			movlw .0
+			xorwf GotMsgDispMode, w
+			btfss STATUS, Z
+				GOTO If_Disp_dash
+				movlw b'11101110'
+				movwf Lcd_data
+				CALL Disp_Info_7seg
+				GOTO UpdateTMR1
 
+		If_Disp_dash
+			movlw .1
+			xorwf GotMsgDispMode, w
+			btfss STATUS, Z
+				GOTO If_Disp_GotAddr
+			Disp_dash
+				movlw b'00000010'
+				movwf Lcd_data
+				CALL Disp_Info_7seg
+				GOTO UpdateTMR1
+		
+		If_Disp_GotAddr
+			movlw .2
+			xorwf GotMsgDispMode, w
+			btfss STATUS, Z
+				GOTO If_Disp_D
+				movf ADDR_reg, w
+				movwf SEV_SEGM_reg
+				CALL InfoDispayAlg
+				GOTO UpdateTMR1
+
+		If_Disp_D
+			movlw .3
+			xorwf GotMsgDispMode, w
+			btfss STATUS, Z
+				GOTO If_DispSecondDash
+				movlw b'00000010'
+				movwf Lcd_data
+				CALL Disp_Info_7seg
+				GOTO UpdateTMR1
+		
+		If_DispSecondDash
+			movlw .4
+			xorwf GotMsgDispMode, w
+			btfss STATUS, Z
+				GOTO If_Disp_GotData
+				GOTO Disp_dash
+
+		If_Disp_GotData
+			movlw .5
+			xorwf GotMsgDispMode, w
+			btfss STATUS, Z
+				GOTO SmthNotOKWithTMR1
+				
+				movf DATA_reg, w
+				movwf SEV_SEGM_reg
+				CALL InfoDispayAlg
+				clrf GotMsgDispMode
+				GOTO UpdateTMR1
+
+	UpdateTMR1
+		banksel TMR1L
+		clrf TMR1L
+		clrf TMR1H
+		banksel PIR1
+	SmthNotOKWithTMR1
+		bcf PIR1, TMR1IF
+		retfie
 
 TRSF_HNDL
 	; Вызывается, если режим отправки сообщений, UART свободен и была нажата кнопка SB0_SEND, для инициализации отправки пакета
 	; Сначала выбирается адрес отправителя. Для этого вызывается функция постоянного обновления 
+	;banksel TRISIO
+	;bcf TRISIO, TX
+	
+	
 	movf ADDR_reg, w
 	movwf SERBUF
+	bsf UART_CON, BIT9
 	CALL SEND_MSG	; Далее отправляется данный бит в TX
 	; Далее снова режим выбора данных отправляемых
 	; По нажатию SB_SEND фиксируются данные 
 	
+	CLRF TMR0
+	CALL StartSimpleT0
 	; WAIT мб нужен!!!!!!!  TODO
 
 	movf DATA_reg, w
 	movwf SERBUF
+	bcf UART_CON, BIT9
 	CALL SEND_MSG
+	return
 	; Отправка данных в TX
 	; Сброс режимов работы в изначальное состояние. Ждём или нажатия кнопки SB_SEND, или прихода пакета.
 	
+StartSimpleT0
+	banksel INTCON
+	bsf INTCON, T0IE
+	banksel INTCON
+	bcf INTCON, GPIF
+	bcf INTCON, T0IF
+	bcf INTCON, PEIE 
+	bsf INTCON, GIE 	; Разрешаем прерывания (Таймер)
+	bsf UART_t0, Simple_TMR
+	WAIT_SimpleTMR
+		btfsc UART_t0, Simple_TMR
+			GOTO WAIT_SimpleTMR
+			bcf INTCON, GIE 	; Разрешаем прерывания (Таймер)
+			bsf INTCON, PEIE 
+			return
 	
 HalfBaud
-	movlw .204
+	movlw .228
 	banksel TMR0
 	movwf TMR0
+	banksel INTCON
 	bsf INTCON, T0IE
+	bcf UART_CON, T0_MODE
 	bsf UART_t0, WAIT_HalfBaud
+	banksel INTCON
+	bcf INTCON, GPIF
+	bcf INTCON, T0IF
+	bcf INTCON, PEIE 
+	bsf INTCON, GIE 	; Разрешаем прерывания (Таймер)
 	WAIT_forHalfBaud
 		btfsc UART_t0, WAIT_HalfBaud
 			GOTO WAIT_forHalfBaud
+			bcf INTCON, GIE 	; Разрешаем прерывания (Таймер)
+			bsf INTCON, PEIE 
 			return
 
 OneBaud
-	movlw .152
+	movlw .201
 	banksel TMR0
 	movwf TMR0
+	banksel INTCON
 	bsf INTCON, T0IE
+	bsf UART_CON, T0_MODE
 	bsf UART_t0, WAIT_FullBaud
+	banksel INTCON
+	bcf INTCON, GPIF
+	bcf INTCON, T0IF
+	bcf INTCON, PEIE 
+	bsf INTCON, GIE 	; Разрешаем прерывания (Таймер)
 	WAIT_forFullBaud
 		btfsc UART_t0, WAIT_FullBaud
 			GOTO WAIT_forFullBaud
+			bcf INTCON, GIE 	; Разрешаем прерывания (Таймер)
+			bsf INTCON, PEIE 
 			return
 	
+Start_Displaying_GotMessage
+	; Если получили сообщение (сначала адрес), потом данные
+	; Запускается таймер T1. Каждую примерно секунду будет отображаться то Адрес, от кого, то данные
+	; А - # d - #
+	banksel STATUS
+	movf GotMsgDispMode, w
+	btfss STATUS, Z
+		GOTO OtherModes; Если НЕ режим 0
+	
+	; Если режим 0
+	banksel TMR1L
+	clrf TMR1L
+	clrf TMR1H
+	
+	banksel PIE1
+	bsf PIE1, TMR1IE
+
+	banksel GPIO
+	bcf GPIO, GPIO5 ; Делаем Порт 5 "Выводом"
+	bsf UART_CON, SEG7_Display_F
+
+	banksel T1CON
+	bsf T1CON, T1CKPS1
+	bsf T1CON, T1CKPS0
+	
+	bsf T1CON, TMR1ON		; Старт таймера
+	return
+
+	OtherModes
+		; WHAT THE FUCK? Я сюда не должен был попадать!!
+		return ; TODO Это что-то явно неправильное!
+
 GET_MSG
 	movlw .8
 	movwf TEMP
@@ -520,35 +737,62 @@ GET_MSG
 		btfss GPIO, RX
 		bsf SERBUF, 7
 		decfsz TEMP, f
-		GOTO Recieve_data
-		
-		CALL OneBaud
-		movf SERBUF, w 			; Не знаю зачем
-		retlw 0
-		
+		GOTO Recieve_data		
+	CALL OneBaud
+	; Читаем 9 бит
+	btfsc GPIO, RX
+		GOTO GetAddress; Если пришёл 9 бит == 1 (адрес)
+		; Если пришёл 9 бит == 0 (данные) - то ХЗ. Надо проверить! 
+		; (9bit == 0)
+		btfsc UART_CON, BanReceiveZ9Bit_F
+			return ; ПРОПУСК ДАННОЙ ПОСЫЛКИ! (ожидали адрес - получили данные)
+			
+			; ЕСЛИ ПОЛУЧИЛИ ДАННЫЕ - И ЭТО ОК
+			movf SERBUF, w
+			movwf DATA_reg
+			CALL Start_Displaying_GotMessage
+			return
+
+	GetAddress ; (9bit == 1)
+		btfss UART_CON, BanReceiveZ9Bit_F
+			return ; ПРОПУСК ДАННОЙ ПОСЫЛКИ! (ожидали данные - получили адрес)
+	
+			; Адрес
+			movf SERBUF, w 			; Не знаю зачем
+			movwf ADDR_reg
+			bcf UART_CON, BanReceiveZ9Bit_F
+			return
+				
+
+
 SEND_MSG
 	; TODO Загрузка отправляемой константы  И загрузка 9 битого
-	movlw .8
 	banksel GPIO
-	bsf GPIO, TX
+	movlw .8
+	movwf Loop_ident
+	bcf GPIO, TX
+	CALL OneBaud
 	Send_data
 		rrf SERBUF, f
+		banksel STATUS
 		btfss STATUS, C
 		GOTO Transfer_0
 		GOTO Transfer_1
 		Transfer_0
+			banksel GPIO
 			bcf GPIO, TX
 			GOTO BIT_ready
 		Transfer_1
+			banksel GPIO
 			bsf GPIO, TX
 		BIT_ready
 			CALL OneBaud
-			decfsz TEMP, f
+			decfsz Loop_ident, f
 			GOTO Send_data
 			
-			btfss UART_CON, BIT9
-			GOTO Send_9one
-			GOTO Send_9zero
+			btfsc UART_CON, BIT9
+				GOTO Send_9one
+				GOTO Send_9zero
 			Send_9one
 				bsf GPIO, TX
 				GOTO Send_Stop
