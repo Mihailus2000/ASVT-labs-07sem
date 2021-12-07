@@ -173,12 +173,38 @@ Init
     movlw IOC_INIT
     movwf IOCB
 
-	;CALL SavePortStates
+		;CALL SavePortStates
 	movf GPIO, w
 	movwf LastPortState
 	
+	clrf UART_CON
 	bsf UART_CON, BanReceiveZ9Bit_F
 	
+	clrf UART_t0
+	
+	clrf T02SecScaler
+	
+	clrf LastPortState
+
+	clrf Accum
+
+	clrf Lcd_data
+
+	clrf Loop_ident
+
+	clrf SERBUF 
+	clrf TEMP 
+
+	clrf LastPressedBtns
+	
+	clrf ADDR_reg
+	clrf DATA_reg
+
+	clrf ButtonModes
+
+	clrf SEV_SEGM_reg 
+
+	clrf GotMsgDispMode 
     return
 
 START
@@ -867,7 +893,7 @@ CheckIfForMe
 		
 GET_MSG
 	banksel IOCB
-	clrf IOCB
+	;clrf IOCB
 	banksel INTCON
 	bcf INTCON, GPIE
 	bcf INTCON, GPIF
@@ -930,6 +956,7 @@ GET_MSG
 			bcf UART_CON, BanReceiveZ9Bit_F
 			banksel IOCB
 			bsf IOCB, RX
+			bsf IOCB, GPIO0
 			banksel INTCON
 			bsf INTCON, GPIE
 			bcf INTCON, GPIF			
@@ -937,7 +964,12 @@ GET_MSG
 		
 		NotForMe
 			bcf UART_CON, RD_F
-			CALL Init			
+			banksel IOCB
+			bsf IOCB, RX
+			bsf IOCB, GPIO0
+			banksel INTCON
+			bsf INTCON, GPIE
+			bcf INTCON, GPIF					
 			return
 			
 	NotOKAll

@@ -1,4 +1,4 @@
-MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:11         PAGE  1
+MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:13         PAGE  1
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
@@ -57,7 +57,7 @@ Warning[207]: Found label after column 1. (TR_F)
   00000001            00036         TR_F equ 01h
 Warning[207]: Found label after column 1. (RD_F)
   00000002            00037         RD_F equ 02h
-MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:11         PAGE  2
+MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:13         PAGE  2
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
@@ -116,7 +116,7 @@ Warning[207]: Found label after column 1. (T1_Busy_on_display)
   00000028            00078 Loop_ident equ 28h
                       00079 
   00000029            00080 SERBUF equ 29h          ; TODO
-MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:11         PAGE  3
+MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:13         PAGE  3
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
@@ -175,7 +175,7 @@ Message[302]: Register in operand not in bank 0.  Ensure that bank bits are corr
                       00128 
 0002   1283           00129     banksel CMCON
 0003   3007           00130     movlw 0x7
-MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:11         PAGE  4
+MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:13         PAGE  4
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
@@ -234,7 +234,7 @@ Message[302]: Register in operand not in bank 0.  Ensure that bank bits are corr
                       00176                 ;CALL SavePortStates
 0022   0805           00177         movf GPIO, w
 0023   00A5           00178         movwf LastPortState
-MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:11         PAGE  5
+MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:13         PAGE  5
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
@@ -293,7 +293,7 @@ Warning[207]: Found label after column 1. (Check_INT_T0)
 003E   2???           00227                         GOTO Check_INT_T1
 003F   190B           00228                         btfsc INTCON, T0IF
 0040   2???           00229                                 GOTO T0_INT
-MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:11         PAGE  6
+MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:13         PAGE  6
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
@@ -352,7 +352,7 @@ Warning[207]: Found label after column 1. (Port_GP5)
 Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
 005E   1E96           00267                 btfss IOCB, GPIO5
 005F   0008           00268                         return
-MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:11         PAGE  7
+MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:13         PAGE  7
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
@@ -411,7 +411,7 @@ Warning[207]: Found label after column 1. (SB0_ifBusy)
 Warning[207]: Found label after column 1. (NormalHandle)
 0070                  00307                 NormalHandle
 0070   1283           00308                         banksel STATUS
-MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:11         PAGE  8
+MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:13         PAGE  8
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
@@ -470,7 +470,7 @@ Message[302]: Register in operand not in bank 0.  Ensure that bank bits are corr
                       00349 
 Warning[207]: Found label after column 1. (SB0_OK)
 0091                  00350         SB0_OK
-MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:11         PAGE  9
+MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:13         PAGE  9
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
@@ -529,7 +529,7 @@ Warning[207]: Found label after column 1. (Fix_data_TX)
 00B1   2???           00392                                 GOTO Send_to_TX         ; мб не так надо?? (TODO)
 00B2   082F           00393                         movf SEV_SEGM_reg, w
 00B3   00AD           00394                         movwf DATA_reg
-MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:11         PAGE 10
+MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:13         PAGE 10
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
@@ -588,7 +588,7 @@ Message[302]: Register in operand not in bank 0.  Ensure that bank bits are corr
 00CC   1416           00434                         bsf IOCB, GPIO0
 00CD   1283           00435                         banksel INTCON
 00CE   158B           00436                         bsf INTCON, GPIE
-MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:11         PAGE 11
+MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:13         PAGE 11
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
@@ -647,7 +647,7 @@ Warning[207]: Found label after column 1. (If_4_on7segm)
 00EF   1D03           00482                 btfss STATUS, Z
 00F0   2???           00483                         GOTO If_5_on7segm; Не совпало с "4"
 00F1   3066           00484                         movlw b'01100110'
-MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:11         PAGE 12
+MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:13         PAGE 12
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
@@ -706,7 +706,7 @@ Warning[207]: Found label after column 1. (If_9_on7segm)
 0115   00A7           00530                         movwf Lcd_data
 0116   0008           00531                         return
                       00532         
-MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:11         PAGE 13
+MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:13         PAGE 13
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
@@ -765,7 +765,7 @@ Warning[207]: Found label after column 1. (Shift_reg)
                             вать? Делать нехрен??
 Message[305]: Using default destination of 1 (file).
 0133   0AAF           00576                 incf SEV_SEGM_reg
-MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:11         PAGE 14
+MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:13         PAGE 14
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
@@ -824,7 +824,7 @@ Warning[207]: Found label after column 1. (InfoDispayAlg)
 014A   128B           00622                 bcf INTCON, T0IE
 014B   110B           00623                 bcf INTCON, T0IF
 014C   0008           00624                 return
-MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:11         PAGE 15
+MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:13         PAGE 15
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
@@ -883,7 +883,7 @@ Warning[207]: Found label after column 1. (Disp_dash)
 016A   00A7           00669                                 movwf Lcd_data
 016B   2???           00670                                 CALL Disp_Info_7seg
 016C   0AB0           00671                                 incf GotMsgDispMode, f
-MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:11         PAGE 16
+MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:13         PAGE 16
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
@@ -942,7 +942,7 @@ Message[302]: Register in operand not in bank 0.  Ensure that bank bits are corr
 Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
 0190   1416           00717                                 bsf IOCB, GPIO0
 0191   1283           00718                                 banksel INTCON
-MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:11         PAGE 17
+MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:13         PAGE 17
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
@@ -974,7 +974,7 @@ Warning[207]: Found label after column 1. (UpdateTMR1)
                       00738         
                       00739         
 019C   082C           00740         movf ADDR_reg, w
-019D   3820           00741         iorlw b'00100000'
+019D   3830           00741         iorlw b'00110000'
 019E   00A9           00742         movwf SERBUF
 019F   16A0           00743         bsf UART_CON, BIT9
 01A0   2???           00744         CALL SEND_MSG   ; Далее отправляется данный бит в TX
@@ -1001,7 +1001,7 @@ Warning[207]: Found label after column 1. (UpdateTMR1)
 01AB   100B           00764         bcf INTCON, GPIF
 01AC   110B           00765         bcf INTCON, T0IF
 01AD   130B           00766         bcf INTCON, PEIE 
-MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:11         PAGE 18
+MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:13         PAGE 18
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
@@ -1060,7 +1060,7 @@ Warning[207]: Found label after column 1. (WAIT_forFullBaud)
 01D8   138B           00815                         bcf INTCON, GIE         ; Разрешаем прерывания (Таймер)
 01D9   170B           00816                         bsf INTCON, PEIE 
 01DA   0008           00817                         return
-MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:11         PAGE 19
+MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:13         PAGE 19
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
@@ -1119,7 +1119,7 @@ Message[302]: Register in operand not in bank 0.  Ensure that bank bits are corr
                       00858 
 Warning[207]: Found label after column 1. (OtherModes)
 01F5                  00859         OtherModes
-MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:11         PAGE 20
+MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:13         PAGE 20
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
@@ -1134,7 +1134,7 @@ LOC  OBJECT CODE     LINE SOURCE TEXT
 01F7   00A6           00866         movwf Accum
 01F8   300F           00867         movlw b'00001111'
 01F9   05A6           00868         andwf Accum, f
-01FA   3002           00869         movlw b'00000010'
+01FA   3003           00869         movlw b'00000011'
 01FB   06A6           00870         xorwf Accum, f
 01FC   08A6           00871                 movf Accum, f
 01FD   1903           00872         btfsc STATUS, Z
@@ -1178,7 +1178,7 @@ Warning[207]: Found label after column 1. (Recieve_data)
 021A   17A9           00908                 bsf SERBUF, 7
 021B   0BAA           00909                 decfsz TEMP, f
 021C   2???           00910                 GOTO Recieve_data               
-MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:11         PAGE 21
+MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:13         PAGE 21
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
@@ -1237,7 +1237,7 @@ Message[305]: Using default destination of 1 (file).
 023C   0CA9           00951                         rrf SERBUF
 023D   0829           00952                         movf SERBUF, w                  ; Не знаю зачем
 023E   00AC           00953                         movwf ADDR_reg
-MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:11         PAGE 22
+MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:13         PAGE 22
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
@@ -1264,7 +1264,7 @@ Message[302]: Register in operand not in bank 0.  Ensure that bank bits are corr
 024A   1416           00967                         bsf IOCB, GPIO0
 024B   1283           00968                         banksel INTCON
 024C   158B           00969                         bsf INTCON, GPIE
-024D   100B           00970                         bcf INTCON, GPIF                
+024D   100B           00970                         bcf INTCON, GPIF                                
 024E   0008           00971                         return
                       00972                         
 Warning[207]: Found label after column 1. (NotOKAll)
@@ -1296,7 +1296,7 @@ Warning[207]: Found label after column 1. (Send_data)
 025F   1C03           00995                 btfss STATUS, C
 0260   2???           00996                 GOTO Transfer_0
 0261   2???           00997                 GOTO Transfer_1
-MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:11         PAGE 23
+MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:13         PAGE 23
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
@@ -1341,7 +1341,7 @@ Warning[207]: Found label after column 1. (Send_Stop)
                       01028 
 Warning[205]: Found directive in column 1. (END)
 3FF4                  01029 END
-MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:11         PAGE 24
+MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:13         PAGE 24
 
 
 SYMBOL TABLE
@@ -1400,7 +1400,7 @@ Disp_Info_7seg                    0000011C
 Disp_dash                         00000169
 EEADR                             0000009B
 EECON1                            0000009C
-MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:11         PAGE 25
+MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:13         PAGE 25
 
 
 SYMBOL TABLE
@@ -1459,7 +1459,7 @@ IOC4                              00000004
 IOC5                              00000005
 IOCB                              00000096
 IOCB0                             00000000
-MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:11         PAGE 26
+MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:13         PAGE 26
 
 
 SYMBOL TABLE
@@ -1518,7 +1518,7 @@ PCON                              0000008E
 PEIE                              00000006
 PIE1                              0000008C
 PIE1_INIT                         00000000
-MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:11         PAGE 27
+MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:13         PAGE 27
 
 
 SYMBOL TABLE
@@ -1577,7 +1577,7 @@ T1CKPS0                           00000004
 T1CKPS1                           00000005
 T1CON                             00000010
 T1CON_INIT                        00000000
-MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:11         PAGE 28
+MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:13         PAGE 28
 
 
 SYMBOL TABLE
@@ -1636,7 +1636,7 @@ WAIT_HalfBaud                     00000000
 WAIT_SimpleTMR                    000001B0
 WAIT_forFullBaud                  000001D6
 WPU                               00000095
-MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:11         PAGE 29
+MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:13         PAGE 29
 
 
 SYMBOL TABLE
@@ -1695,7 +1695,7 @@ __12F675                          00000001
 btn_INC                           00000001
 btn_RST                           00000003
 btn_SEND                          00000000
-MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:11         PAGE 30
+MPASM 5.76                          MAIN.ASM   12-7-2021  1:54:13         PAGE 30
 
 
 
